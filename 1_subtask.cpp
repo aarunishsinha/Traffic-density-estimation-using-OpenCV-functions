@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
 using namespace cv;
 using namespace std;
@@ -34,11 +35,18 @@ int main( int argc, char** argv)
     im_projected = 0;
 
     vector<Point2f> pts_projected;
-
+    
+    /*
     pts_projected.push_back(Point2f(0,0));
     pts_projected.push_back(Point2f(size.width-1,0));
     pts_projected.push_back(Point2f(size.width-1,size.height-1));
     pts_projected.push_back(Point2f(0,size.height-1));
+    */
+    
+    pts_projected.push_back(Point2f(472,52));
+    pts_projected.push_back(Point2f(800,52));
+    pts_projected.push_back(Point2f(800,830));
+    pts_projected.push_back(Point2f(472,830));
 
     namedWindow("Image", 1);
 
@@ -56,8 +64,16 @@ int main( int argc, char** argv)
     // Projecting image
     Mat transform = findHomography(take_input.points, pts_projected);
     warpPerspective(grey_img, im_projected, transform, size);
-
+    
     imshow("Image", im_projected);
+    waitKey(0);
+    
+    // Cropping image
+    Rect croppedRectangle = Rect(472,52,328,778);
+    Mat croppedImage = im_projected(croppedRectangle);
+    
+    namedWindow("Cropped",WINDOW_FREERATIO);
+    imshow("Cropped",croppedImage);
     waitKey(0);
 
 

@@ -93,14 +93,16 @@ int main( int argc, char** argv)
 
     imshow("Image", temp);
     waitKey(0);
-
+	destroyAllWindows();
 	
     // Projecting image
     Mat transform = findHomography(take_input.points, pts_projected);
-    warpPerspective(grey_img, im_projected, transform, size);
+    //warpPerspective(grey_img, im_projected, transform, size);
+    warpPerspective(grey_img, im_projected, transform, Size(1100,900));
     
     createWindow("Projected Image", im_projected);
     imshow("Projected Image", im_projected);
+    imwrite("projectedImage.jpg",im_projected);
     waitKey(0);
     
     
@@ -110,6 +112,7 @@ int main( int argc, char** argv)
     
     createWindow("Cropped",croppedImage);
     imshow("Cropped",croppedImage);
+    imwrite("croppedImage.jpg",croppedImage);
     waitKey(0);
 	
 	destroyAllWindows();

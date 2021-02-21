@@ -15,6 +15,7 @@ int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 void mouseClick(int event, int x, int y, int flags, void* userdata){
     if (event==EVENT_LBUTTONDOWN){
+    	cout<<x<<" "<<y<<endl;
         data *image = ((data *) userdata);
         imshow("Image", image->img);
         image->points.push_back(Point2f(x,y));
@@ -61,7 +62,7 @@ int main( int argc, char** argv)
     cvtColor(im_src, grey_img, COLOR_BGR2GRAY);
 
     MatSize s = grey_img.size;
-    Size size(s[0], s[1]);
+    Size size(s[1], s[0]);
     // Mat im_projected = Mat::zeros(s, CV_8UC4);
     Mat im_projected (size, CV_8UC4);
     im_projected = 0;
@@ -75,10 +76,10 @@ int main( int argc, char** argv)
     pts_projected.push_back(Point2f(0,size.height-1));
     */
     
-    pts_projected.push_back(Point2f(472,52));
-    pts_projected.push_back(Point2f(800,52));
-    pts_projected.push_back(Point2f(800,830));
-    pts_projected.push_back(Point2f(472,830));
+    pts_projected.push_back(Point2f(772,232));
+    pts_projected.push_back(Point2f(1100,232));
+    pts_projected.push_back(Point2f(1100,1010));
+    pts_projected.push_back(Point2f(772,1010));
     
 	
     // Mouse Input
@@ -95,10 +96,10 @@ int main( int argc, char** argv)
     waitKey(0);
 	destroyAllWindows();
 	
+	
     // Projecting image
     Mat transform = findHomography(take_input.points, pts_projected);
-    //warpPerspective(grey_img, im_projected, transform, size);
-    warpPerspective(grey_img, im_projected, transform, Size(1100,900));
+    warpPerspective(grey_img, im_projected, transform, size);
     
     createWindow("Projected Image", im_projected);
     imshow("Projected Image", im_projected);
@@ -107,7 +108,7 @@ int main( int argc, char** argv)
     
     
     // Cropping image
-    Rect croppedRectangle = Rect(472,52,328,778);
+    Rect croppedRectangle = Rect(772,232,328,778);
     Mat croppedImage = im_projected(croppedRectangle);
     
     createWindow("Cropped",croppedImage);

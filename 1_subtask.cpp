@@ -1,7 +1,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include <X11/Xlib.h>
+#include <iostream>
+// #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 using namespace cv;
 using namespace std;
@@ -22,15 +23,15 @@ void mouseClick(int event, int x, int y, int flags, void* userdata){
     }
 }
 
-void getScreenResolution(){
+/*void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
 	Display* disp = XOpenDisplay(NULL);
 	Screen* screen = DefaultScreenOfDisplay(disp);
 	SCREEN_WIDTH = screen->width;
 	SCREEN_HEIGHT = screen->height;
-}
+}*/
 
  
-void createWindow(string WindowName, Mat &img){
+/*void createWindow(string WindowName, Mat &img){           // UNCOMMENT TO RESIZE WINDOW 
 	// To resize image window if image resolution is more than screen resolution.
 	
 	namedWindow(WindowName, WINDOW_KEEPRATIO);
@@ -45,16 +46,19 @@ void createWindow(string WindowName, Mat &img){
 		
 		resizeWindow(WindowName,window_width,window_height);
 	}
-}
+}*/
 
 int main( int argc, char** argv)
 {	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
-    getScreenResolution();
-    
+    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
 
     // Read in the image.
-    Mat im_src = imread("empty.jpg");
+    Mat im_src = imread(argv[1]);
+    if (im_src.empty()){
+        cout<<"Could not read the image "<<argv[1]<<endl;
+        return -1;
+    }
     
 
     // Converting RGB image to grayscale
@@ -69,12 +73,6 @@ int main( int argc, char** argv)
 
     vector<Point2f> pts_projected;
     
-    /*
-    pts_projected.push_back(Point2f(0,0));
-    pts_projected.push_back(Point2f(size.width-1,0));
-    pts_projected.push_back(Point2f(size.width-1,size.height-1));
-    pts_projected.push_back(Point2f(0,size.height-1));
-    */
     
     pts_projected.push_back(Point2f(772,232));
     pts_projected.push_back(Point2f(1100,232));
@@ -84,8 +82,8 @@ int main( int argc, char** argv)
 	
     // Mouse Input
     Mat temp = grey_img.clone();
-	//namedWindow("Image", 1);
-	createWindow("Image",temp);
+	namedWindow("Image", 1);
+	// createWindow("Image",temp);             // UNCOMMENT TO RESIZE WINDOW 
 	
     data take_input;
     take_input.img = temp;
@@ -101,9 +99,11 @@ int main( int argc, char** argv)
     Mat transform = findHomography(take_input.points, pts_projected);
     warpPerspective(grey_img, im_projected, transform, size);
     
-    createWindow("Projected Image", im_projected);
+    namedWindow("Projected Image", WINDOW_KEEPRATIO);
+    // createWindow("Projected Image", im_projected);       // UNCOMMENT TO RESIZE WINDOW 
+    string proj_name = string("proj_") + string(argv[1]);
     imshow("Projected Image", im_projected);
-    imwrite("projectedImage.jpg",im_projected);
+    imwrite(proj_name,im_projected);
     waitKey(0);
     
     
@@ -111,9 +111,11 @@ int main( int argc, char** argv)
     Rect croppedRectangle = Rect(772,232,328,778);
     Mat croppedImage = im_projected(croppedRectangle);
     
-    createWindow("Cropped",croppedImage);
+    namedWindow("Cropped", WINDOW_KEEPRATIO);
+    // createWindow("Cropped",croppedImage);                // UNCOMMENT TO RESIZE WINDOW 
     imshow("Cropped",croppedImage);
-    imwrite("croppedImage.jpg",croppedImage);
+    string cropname = string("cropped_") + string(argv[1]);
+    imwrite(cropname,croppedImage);
     waitKey(0);
 	
 	destroyAllWindows();

@@ -6,12 +6,18 @@ COP290 - Design Practices
 - Convert the images to grayscale.
 - Add mouseclick functionality for selecting corresponding points.
 - Perform projecting and cropping using OpenCV functions.
-- Use the previously selected points to transform the image ```traffic.jpg```.
+- Add user input for images and error-handling.
 
-### Execute:
+### README:
+To Compile:
 ```
 $ make
 ```
-An image in greyscale will appear on the screen.\
-Click on the four points you want to use for projection, starting from the top-left corner, in a clockwise manner. \
-Then press ```Enter```.
+To Run:
+```
+$ ./1_subtask <image_path_name>
+```
+The image given as input will appear in a window. Select 4 points, starting from top-left, in clockwise fashion and press ```Enter```.\
+A new window will appear with the projected image and it will be stored in the same directory as well.\
+Press ```Enter``` and another window will appear with the cropped image, which is also simultaneously stored in the same directory.\
+Press ```Enter``` to terminate execution.

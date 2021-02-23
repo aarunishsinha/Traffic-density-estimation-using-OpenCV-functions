@@ -13,10 +13,11 @@ struct data{
 };
 
 int SCREEN_WIDTH,SCREEN_HEIGHT;
+int MOUSE_INPUT_CNT;
 
 void mouseClick(int event, int x, int y, int flags, void* userdata){
-    if (event==EVENT_LBUTTONDOWN){
-    	cout<<x<<" "<<y<<endl;
+    if (event==EVENT_LBUTTONDOWN && MOUSE_INPUT_CNT<4){
+    	MOUSE_INPUT_CNT++;
         data *image = ((data *) userdata);
         imshow("Image", image->img);
         image->points.push_back(Point2f(x,y));
@@ -31,12 +32,12 @@ void mouseClick(int event, int x, int y, int flags, void* userdata){
 }*/
 
  
-/*void createWindow(string WindowName, Mat &img){           // UNCOMMENT TO RESIZE WINDOW 
+void createWindow(string WindowName, Mat &img){
 	// To resize image window if image resolution is more than screen resolution.
 	
 	namedWindow(WindowName, WINDOW_KEEPRATIO);
 	
-	if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){
+	/*if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
 		double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
 		double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
 		double scale=min(scale_width,scale_height);
@@ -45,14 +46,14 @@ void mouseClick(int event, int x, int y, int flags, void* userdata){
 		int window_height=scale*img.size[0];
 		
 		resizeWindow(WindowName,window_width,window_height);
-	}
-}*/
+	}*/
+}
 
 int main( int argc, char** argv)
 {	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
     // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
-
+    
     // Read in the image.
     Mat im_src = imread(argv[1]);
     if (im_src.empty()){
@@ -82,12 +83,11 @@ int main( int argc, char** argv)
 	
     // Mouse Input
     Mat temp = grey_img.clone();
-	namedWindow("Image", 1);
-	// createWindow("Image",temp);             // UNCOMMENT TO RESIZE WINDOW 
+	createWindow("Image",temp);
 	
     data take_input;
     take_input.img = temp;
-
+	MOUSE_INPUT_CNT = 0;
     setMouseCallback("Image", mouseClick, &take_input);
 
     imshow("Image", temp);
@@ -99,8 +99,7 @@ int main( int argc, char** argv)
     Mat transform = findHomography(take_input.points, pts_projected);
     warpPerspective(grey_img, im_projected, transform, size);
     
-    namedWindow("Projected Image", WINDOW_KEEPRATIO);
-    // createWindow("Projected Image", im_projected);       // UNCOMMENT TO RESIZE WINDOW 
+    createWindow("Projected Image", im_projected);
     string proj_name = string("proj_") + string(argv[1]);
     imshow("Projected Image", im_projected);
     imwrite(proj_name,im_projected);
@@ -111,8 +110,7 @@ int main( int argc, char** argv)
     Rect croppedRectangle = Rect(772,232,328,778);
     Mat croppedImage = im_projected(croppedRectangle);
     
-    namedWindow("Cropped", WINDOW_KEEPRATIO);
-    // createWindow("Cropped",croppedImage);                // UNCOMMENT TO RESIZE WINDOW 
+    createWindow("Cropped",croppedImage);
     imshow("Cropped",croppedImage);
     string cropname = string("cropped_") + string(argv[1]);
     imwrite(cropname,croppedImage);

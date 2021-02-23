@@ -54,6 +54,11 @@ int main( int argc, char** argv)
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
     // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
     
+    if (argc < 2){
+    	cout<<"Input filename required in the command line arguments! \n";
+    	return -1;
+    }
+    
     // Read in the image.
     Mat im_src = imread(argv[1]);
     if (im_src.empty()){

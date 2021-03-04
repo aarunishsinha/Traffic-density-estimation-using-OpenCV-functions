@@ -2,7 +2,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-// #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
+#include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 using namespace cv;
 using namespace std;
@@ -24,12 +24,12 @@ void mouseClick(int event, int x, int y, int flags, void* userdata){
     }
 }
 
-/*void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
+void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
 	Display* disp = XOpenDisplay(NULL);
 	Screen* screen = DefaultScreenOfDisplay(disp);
 	SCREEN_WIDTH = screen->width;
 	SCREEN_HEIGHT = screen->height;
-}*/
+}
 
  
 void createWindow(string WindowName, Mat &img){
@@ -37,7 +37,7 @@ void createWindow(string WindowName, Mat &img){
 	
 	namedWindow(WindowName, WINDOW_KEEPRATIO);
 	
-	/*if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
+	if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
 		double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
 		double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
 		double scale=min(scale_width,scale_height);
@@ -46,13 +46,55 @@ void createWindow(string WindowName, Mat &img){
 		int window_height=scale*img.size[0];
 		
 		resizeWindow(WindowName,window_width,window_height);
-	}*/
+	}
 }
+
+
+
 
 int main( int argc, char** argv)
 {	
+	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
-    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
+    getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
+	
+	
+	VideoCapture cap("trafficvideo.mp4");
+	
+	if(!cap.isOpened()){
+		cout<<"Error opening video file \n";
+		return -1;
+	}
+	
+	while(1){
+		Mat frame;
+		cap>>frame;
+		
+		if(frame.empty()){
+			break;
+		}
+		
+		
+		createWindow("Video Frame", frame);
+		
+		imshow("Video Frame",frame);
+		
+		// esc key pressed
+		char ch=(char)waitKey(25);
+		if(ch==27){
+			break;
+		}
+	}
+	
+	cap.release();
+	
+	destroyAllWindows();
+	
+	return 0;
+
+
+	
+    /*
     
     if (argc < 2){
     	cout<<"Input filename required in the command line arguments! \n";
@@ -123,5 +165,6 @@ int main( int argc, char** argv)
 	
 	destroyAllWindows();
 
-    return 0;
+    return 0;*/
+    
 }

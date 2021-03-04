@@ -61,25 +61,32 @@ int main( int argc, char** argv)
 	
 	VideoCapture cap("trafficvideo.mp4");
 	
+	// check if capturing has been initialized properly
 	if(!cap.isOpened()){
 		cout<<"Error opening video file \n";
 		return -1;
 	}
 	
+	int frame_count=0;
 	while(1){
 		Mat frame;
 		cap>>frame;
 		
+		// video ends
 		if(frame.empty()){
 			break;
 		}
 		
+		frame_count++;
+		if(frame_count%3!=1){
+			continue;
+		}
 		
 		createWindow("Video Frame", frame);
 		
 		imshow("Video Frame",frame);
 		
-		// esc key pressed
+		// esc key pressed to exit from video
 		char ch=(char)waitKey(25);
 		if(ch==27){
 			break;

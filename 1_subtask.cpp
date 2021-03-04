@@ -7,22 +7,7 @@
 using namespace cv;
 using namespace std;
 
-struct data{
-    vector<Point2f> points;
-    Mat img;
-};
-
 int SCREEN_WIDTH,SCREEN_HEIGHT;
-int MOUSE_INPUT_CNT;
-
-void mouseClick(int event, int x, int y, int flags, void* userdata){
-    if (event==EVENT_LBUTTONDOWN && MOUSE_INPUT_CNT<4){
-    	MOUSE_INPUT_CNT++;
-        data *image = ((data *) userdata);
-        imshow("Image", image->img);
-        image->points.push_back(Point2f(x,y));
-    }
-}
 
 void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
 	Display* disp = XOpenDisplay(NULL);
@@ -50,6 +35,41 @@ void createWindow(string WindowName, Mat &img){
 }
 
 
+Mat cropFrame(Mat& im_src){
+	// Converting RGB image to grayscale
+    Mat grey_img;
+    cvtColor(im_src, grey_img, COLOR_BGR2GRAY);
+
+    MatSize s = grey_img.size;
+    Size size(s[1], s[0]);
+    // Mat im_projected = Mat::zeros(s, CV_8UC4);
+    Mat im_projected (size, CV_8UC4);
+    im_projected = 0;
+	
+	// points to project the corner points of road
+    vector<Point2f> pts_projected;
+    pts_projected.push_back(Point2f(750,210));
+    pts_projected.push_back(Point2f(1100,210));
+    pts_projected.push_back(Point2f(1100,1050));
+    pts_projected.push_back(Point2f(750,1050));
+    
+    // corner points of road in the empty.jpg image given in subtask1
+    vector<Point2f> pts_roadCorners;
+    pts_roadCorners.push_back(Point2f(981,213));
+    pts_roadCorners.push_back(Point2f(1263,207));
+    pts_roadCorners.push_back(Point2f(1515,1061));
+    pts_roadCorners.push_back(Point2f(381,1073));
+	
+    // Projecting image
+    Mat transform = findHomography(pts_roadCorners, pts_projected);
+    warpPerspective(grey_img, im_projected, transform, size);
+    
+    // Cropping image
+    Rect croppedRectangle = Rect(700,210,430,850);
+    Mat croppedImage = im_projected(croppedRectangle);
+    
+    return croppedImage;
+}
 
 
 int main( int argc, char** argv)
@@ -58,7 +78,7 @@ int main( int argc, char** argv)
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
     getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
 	
-	
+	// Read the video file
 	VideoCapture cap("trafficvideo.mp4");
 	
 	// check if capturing has been initialized properly
@@ -82,9 +102,10 @@ int main( int argc, char** argv)
 			continue;
 		}
 		
-		createWindow("Video Frame", frame);
-		
-		imshow("Video Frame",frame);
+		// project and crop the particular frame
+		Mat processedFrame = cropFrame(frame);
+		createWindow("Video Frame", processedFrame);
+		imshow("Video Frame", processedFrame);
 		
 		// esc key pressed to exit from video
 		char ch=(char)waitKey(25);
@@ -98,80 +119,5 @@ int main( int argc, char** argv)
 	destroyAllWindows();
 	
 	return 0;
-
-
-	
-    /*
-    
-    if (argc < 2){
-    	cout<<"Input filename required in the command line arguments! \n";
-    	return -1;
-    }
-    
-    // Read in the image.
-    Mat im_src = imread(argv[1]);
-    if (im_src.empty()){
-        cout<<"Could not read the image "<<argv[1]<<endl;
-        return -1;
-    }
-    
-
-    // Converting RGB image to grayscale
-    Mat grey_img;
-    cvtColor(im_src, grey_img, COLOR_BGR2GRAY);
-
-    MatSize s = grey_img.size;
-    Size size(s[1], s[0]);
-    // Mat im_projected = Mat::zeros(s, CV_8UC4);
-    Mat im_projected (size, CV_8UC4);
-    im_projected = 0;
-
-    vector<Point2f> pts_projected;
-    
-    
-    pts_projected.push_back(Point2f(772,232));
-    pts_projected.push_back(Point2f(1100,232));
-    pts_projected.push_back(Point2f(1100,1010));
-    pts_projected.push_back(Point2f(772,1010));
-    
-	
-    // Mouse Input
-    Mat temp = grey_img.clone();
-	createWindow("Image",temp);
-	
-    data take_input;
-    take_input.img = temp;
-	MOUSE_INPUT_CNT = 0;
-    setMouseCallback("Image", mouseClick, &take_input);
-
-    imshow("Image", temp);
-    waitKey(0);
-	destroyAllWindows();
-	
-	
-    // Projecting image
-    Mat transform = findHomography(take_input.points, pts_projected);
-    warpPerspective(grey_img, im_projected, transform, size);
-    
-    createWindow("Projected Image", im_projected);
-    string proj_name = string("proj_") + string(argv[1]);
-    imshow("Projected Image", im_projected);
-    imwrite(proj_name,im_projected);
-    waitKey(0);
-    
-    
-    // Cropping image
-    Rect croppedRectangle = Rect(772,232,328,778);
-    Mat croppedImage = im_projected(croppedRectangle);
-    
-    createWindow("Cropped",croppedImage);
-    imshow("Cropped",croppedImage);
-    string cropname = string("cropped_") + string(argv[1]);
-    imwrite(cropname,croppedImage);
-    waitKey(0);
-	
-	destroyAllWindows();
-
-    return 0;*/
     
 }

@@ -145,6 +145,7 @@ int main( int argc, char** argv)
 	Mat bgimg;
 	temp>>bgimg;
 	bgimg = cropFrame(bgimg);
+	Mat prevFrame = bgimg.clone();
 	
 	int frame_count=0;
 	while(1){
@@ -166,15 +167,25 @@ int main( int argc, char** argv)
 		createWindow("Video Frame", processedFrame);
 		imshow("Video Frame", processedFrame);
 		
-		// remove background and highlight the vehicles
-		Mat res = diff(processedFrame,bgimg);
-		createWindow("Result", res);
-		imshow("Result", res);
+		// remove background and highlight all the vehicles
+		Mat allVehicles = diff(processedFrame,bgimg);
+		createWindow("All Vehicles", allVehicles);
+		imshow("All Vehicles", allVehicles);
 		
 		// calculate vehicle count on road
-		int queue_density= estimatedVehicle(res);
+		int queue_density= estimatedVehicle(allVehicles);
 		cout<<"Queue Density of frame "<<frame_count<<" is "<<queue_density<<"\n";
 		
+		// remove background using previous frame to highlight moving vehicles
+		Mat movingVehicles = diff(processedFrame,prevFrame);
+		createWindow("Moving Vehicles",movingVehicles);
+		imshow("Moving Vehicles",movingVehicles);
+		
+		// calculate moving vehicle count on road
+		int dynamic_density = estimatedVehicle(movingVehicles);
+		cout<<"Dynamic Density of frame "<<frame_count<<" is "<<dynamic_density<<"\n";
+		
+		prevFrame = processedFrame;
 		
 		// esc key pressed to exit from video
 		char ch=(char)waitKey(25);

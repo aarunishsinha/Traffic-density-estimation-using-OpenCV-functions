@@ -2,19 +2,21 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-#include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
+#include <fstream>
+// #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 using namespace cv;
 using namespace std;
 
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
-void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
-	Display* disp = XOpenDisplay(NULL);
-	Screen* screen = DefaultScreenOfDisplay(disp);
-	SCREEN_WIDTH = screen->width;
-	SCREEN_HEIGHT = screen->height;
-}
+// Get Screen resolution of device being used
+// void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
+// 	Display* disp = XOpenDisplay(NULL);
+// 	Screen* screen = DefaultScreenOfDisplay(disp);
+// 	SCREEN_WIDTH = screen->width;
+// 	SCREEN_HEIGHT = screen->height;
+// }
 
  
 void createWindow(string WindowName, Mat &img){
@@ -22,19 +24,19 @@ void createWindow(string WindowName, Mat &img){
 	
 	namedWindow(WindowName, WINDOW_KEEPRATIO);
 	
-	if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
-		double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
-		double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
-		double scale=min(scale_width,scale_height);
+	// if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
+	// 	double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
+	// 	double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
+	// 	double scale=min(scale_width,scale_height);
 		
-		int window_width=scale*img.size[1];
-		int window_height=scale*img.size[0];
+	// 	int window_width=scale*img.size[1];
+	// 	int window_height=scale*img.size[0];
 		
-		resizeWindow(WindowName,window_width,window_height);
-	}
+	// 	resizeWindow(WindowName,window_width,window_height);
+	// }
 }
 
-
+// Crop and warp a frame in a video
 Mat cropFrame(Mat& im_src){
 	// Converting RGB image to grayscale
     Mat grey_img;
@@ -46,26 +48,39 @@ Mat cropFrame(Mat& im_src){
     Mat im_projected (size, CV_8UC4);
     im_projected = 0;
 	
-	// points to project the corner points of road
+	// // points to project the corner points of road
+ //    vector<Point2f> pts_projected;
+ //    pts_projected.push_back(Point2f(600,200));
+ //    pts_projected.push_back(Point2f(1200,200));
+ //    pts_projected.push_back(Point2f(1200,1000));
+ //    pts_projected.push_back(Point2f(600,1000));
+    
+ //    // corner points of road in the empty.jpg image given in subtask1
+ //    vector<Point2f> pts_roadCorners;
+ //    pts_roadCorners.push_back(Point2f(950,213));
+ //    pts_roadCorners.push_back(Point2f(1263,207));
+ //    pts_roadCorners.push_back(Point2f(1515,1061));
+ //    pts_roadCorners.push_back(Point2f(300,1073));
+
     vector<Point2f> pts_projected;
-    pts_projected.push_back(Point2f(600,200));
-    pts_projected.push_back(Point2f(1200,200));
-    pts_projected.push_back(Point2f(1200,1000));
-    pts_projected.push_back(Point2f(600,1000));
+    pts_projected.push_back(Point2f(750,210));
+    pts_projected.push_back(Point2f(1100,210));
+    pts_projected.push_back(Point2f(1100,1050));
+    pts_projected.push_back(Point2f(750,1050));
     
     // corner points of road in the empty.jpg image given in subtask1
     vector<Point2f> pts_roadCorners;
-    pts_roadCorners.push_back(Point2f(950,213));
+    pts_roadCorners.push_back(Point2f(981,213));
     pts_roadCorners.push_back(Point2f(1263,207));
     pts_roadCorners.push_back(Point2f(1515,1061));
-    pts_roadCorners.push_back(Point2f(300,1073));
+    pts_roadCorners.push_back(Point2f(381,1073));
 	
     // Projecting image
     Mat transform = findHomography(pts_roadCorners, pts_projected);
     warpPerspective(grey_img, im_projected, transform, size);
     
     // Cropping image
-    Rect croppedRectangle = Rect(580,200,640,810);
+    Rect croppedRectangle = Rect(750,210,350,840);
     Mat croppedImage = im_projected(croppedRectangle);
     
     return croppedImage;
@@ -109,17 +124,32 @@ Mat diff(Mat& img, Mat& bg){
 }
 
 
-int estimatedVehicle(Mat& res){
-	int queue_density = 0;
-	vector<vector<Point>> contours;
-	vector<Vec4i> hierarchy;
-	findContours(res, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
-	for(auto cntr: contours){
-		if(contourArea(cntr)>=2500){
-			queue_density++;
+float estimatedVehicle(Mat& res){
+	// int queue_density = 0;
+	// vector<vector<Point>> contours;
+	// vector<Vec4i> hierarchy;
+	// findContours(res, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+	// int total = 0;
+	// for(auto cntr: contours){
+	// 	if(contourArea(cntr)>=2500){
+	// 		queue_density++;
+	// 	}
+	// 	total++;
+	// }
+	// float dens = (float)queue_density / (float)total;
+	// return dens;
+	int count = 0;
+	int total = 0;
+	for(int i=0;i<res.rows;i++){
+		for(int j=0;j<res.cols;j++){
+			if (res.at<uchar>(i,j) > 0){
+				count++;
+			}
+			total++;
 		}
 	}
-	return queue_density;
+	float density = (float)count / (float)total;
+	return density;
 }
 
 
@@ -127,7 +157,7 @@ int main( int argc, char** argv)
 {	
 	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
-    getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
+    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
     
 	
 	// Read the video file
@@ -147,6 +177,14 @@ int main( int argc, char** argv)
 	bgimg = cropFrame(bgimg);
 	Mat prevFrame = bgimg.clone();
 	
+	// For plotting
+	ofstream frames;
+	frames.open ("frame_num.txt");
+	ofstream q_dens;
+	q_dens.open ("queue_density.txt");
+	ofstream d_dens;
+	d_dens.open ("dynamic_density.txt");
+
 	int frame_count=0;
 	while(1){
 		Mat frame;
@@ -173,8 +211,10 @@ int main( int argc, char** argv)
 		imshow("All Vehicles", allVehicles);
 		
 		// calculate vehicle count on road
-		int queue_density= estimatedVehicle(allVehicles);
+		float queue_density= estimatedVehicle(allVehicles);
 		cout<<"Queue Density of frame "<<frame_count<<" is "<<queue_density<<"\n";
+		q_dens<<queue_density<<",";
+		frames<<frame_count<<",";
 		
 		// remove background using previous frame to highlight moving vehicles
 		Mat movingVehicles = diff(processedFrame,prevFrame);
@@ -182,8 +222,9 @@ int main( int argc, char** argv)
 		imshow("Moving Vehicles",movingVehicles);
 		
 		// calculate moving vehicle count on road
-		int dynamic_density = estimatedVehicle(movingVehicles);
+		float dynamic_density = estimatedVehicle(movingVehicles);
 		cout<<"Dynamic Density of frame "<<frame_count<<" is "<<dynamic_density<<"\n";
+		d_dens<<dynamic_density<<",";
 		
 		prevFrame = processedFrame;
 		
@@ -194,6 +235,9 @@ int main( int argc, char** argv)
 		}
 	}
 	
+	q_dens.close();
+	frames.close();
+	d_dens.close();
 	cap.release();
 	
 	destroyAllWindows();

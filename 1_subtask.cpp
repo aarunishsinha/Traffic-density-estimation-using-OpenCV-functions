@@ -179,11 +179,11 @@ int main( int argc, char** argv)
 	
 	// For plotting
 	ofstream frames;
-	frames.open ("frame_num.txt");
+	frames.open ("Plotting/frame_num.txt");
 	ofstream q_dens;
-	q_dens.open ("queue_density.txt");
+	q_dens.open ("Plotting/queue_density.txt");
 	ofstream d_dens;
-	d_dens.open ("dynamic_density.txt");
+	d_dens.open ("Plotting/dynamic_density.txt");
 
 	int frame_count=0;
 	while(1){

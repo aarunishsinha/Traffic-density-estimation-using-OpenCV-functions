@@ -217,7 +217,7 @@ int main( int argc, char** argv)
 		}
 		
 		frame_count++;
-		if(frame_count%5!=1){
+		if(frame_count%3!=1){
 			continue;
 		}
 		

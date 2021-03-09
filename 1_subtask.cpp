@@ -3,7 +3,7 @@
 #include <opencv2/highgui.hpp>
 #include <iostream>
 #include <fstream>
-#include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
+// #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 using namespace cv;
 using namespace std;
@@ -11,12 +11,12 @@ using namespace std;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
-void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
+/*void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
  	Display* disp = XOpenDisplay(NULL);
 	Screen* screen = DefaultScreenOfDisplay(disp);
 	SCREEN_WIDTH = screen->width;
 	SCREEN_HEIGHT = screen->height;
-}
+}*/
 
  
 void createWindow(string WindowName, Mat &img){
@@ -24,7 +24,7 @@ void createWindow(string WindowName, Mat &img){
 	
 	namedWindow(WindowName, WINDOW_KEEPRATIO);
 	
-	if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
+	/*if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
 		double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
 		double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
 		double scale=min(scale_width,scale_height);
@@ -33,7 +33,7 @@ void createWindow(string WindowName, Mat &img){
 		int window_height=scale*img.size[0];
 		
 		resizeWindow(WindowName,window_width,window_height);
-	}
+	}*/
 }
 
 // Crop and warp a frame in a video
@@ -98,7 +98,6 @@ Mat diffStatic(Mat& img, Mat& bg){
 	return muler;
 }
 
-
 Mat diffMoving(Mat& img, Mat& bg){
 	Mat temp ;
 	absdiff(img, bg, temp);
@@ -141,8 +140,6 @@ Mat simpleDiff(Mat& img, Mat& bg){
 	return temp;
 }
 
-
-
 float estimatedVehicle(Mat& res){
 	int count = 0;
 	int total = 0;
@@ -162,7 +159,7 @@ int main( int argc, char** argv)
 {	
 	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
-    getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
+    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
 	
 	// Read the video file
 	VideoCapture cap("trafficvideo.mp4");
@@ -188,6 +185,8 @@ int main( int argc, char** argv)
 	q_dens.open ("Plotting/queue_density.txt");
 	ofstream d_dens;
 	d_dens.open ("Plotting/dynamic_density.txt");
+	ofstream output;
+	output.open ("Plotting/out.txt");
 	
 
 	int frame_count=0;
@@ -207,29 +206,30 @@ int main( int argc, char** argv)
 		
 		// project and crop the particular frame
 		Mat processedFrame = cropFrame(frame);
-		createWindow("Video Frame", processedFrame);
-		imshow("Video Frame", processedFrame);
+		//createWindow("Video Frame", processedFrame);
+		//imshow("Video Frame", processedFrame);
 		
 		// remove background and highlight all the vehicles
 		Mat allVehicles = diffStatic(processedFrame,bgimg);
-		createWindow("All Vehicles", allVehicles);
-		imshow("All Vehicles", allVehicles);
+		//createWindow("All Vehicles", allVehicles);
+		//imshow("All Vehicles", allVehicles);
 		
 		// calculate vehicle count on road
 		float queue_density= estimatedVehicle(allVehicles);
-		cout<<"Queue Density of frame "<<frame_count<<" is "<<queue_density<<"\n";
 		q_dens<<queue_density<<",";
-		frames<<(float)frame_count/15.0<<",";
+		frames<<frame_count<<",";
 		
 		// remove background using previous frame to highlight moving vehicles
 		Mat movingVehicles = diffMoving(processedFrame,prevFrame);
-		createWindow("Moving Vehicles",movingVehicles);
-		imshow("Moving Vehicles",movingVehicles);
+		//createWindow("Moving Vehicles",movingVehicles);
+		//imshow("Moving Vehicles",movingVehicles);
 		
 		// calculate moving vehicle count on road
 		float dynamic_density = estimatedVehicle(movingVehicles);
-		cout<<"Dynamic Density of frame "<<frame_count<<" is "<<dynamic_density<<"\n";
 		d_dens<<dynamic_density<<",";
+		
+		cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
+		output<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
 		
 		prevFrame = processedFrame;
 		
@@ -243,6 +243,7 @@ int main( int argc, char** argv)
 	q_dens.close();
 	frames.close();
 	d_dens.close();
+	output.close();
 	cap.release();
 	
 	destroyAllWindows();

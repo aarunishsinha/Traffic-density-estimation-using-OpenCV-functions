@@ -162,7 +162,15 @@ int main( int argc, char** argv)
     // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
 	
 	// Read the video file
-	VideoCapture cap("trafficvideo.mp4");
+	if (argc >2){
+		cout<<"This program takes a single arguement \n";
+		return -1;
+	}
+	else if(argc <2){
+		cout<<"Please enter the path to video as an arguement \n";
+		return -1;
+	}
+	VideoCapture cap(argv[1]);
 	
 	// check if capturing has been initialized properly
 	if(!cap.isOpened()){
@@ -171,7 +179,7 @@ int main( int argc, char** argv)
 	}
 	
 	// Frame 1995(TS-> 2:13) set as background image.
-	VideoCapture temp("trafficvideo.mp4");
+	VideoCapture temp(argv[1]);
 	temp.set(1,1995);
 	Mat bgimg;
 	temp>>bgimg;
@@ -187,7 +195,7 @@ int main( int argc, char** argv)
 	d_dens.open ("Plotting/dynamic_density.txt");
 	ofstream output;
 	output.open ("Plotting/out.txt");
-	
+	cout<<"framenum,queue density,dynamic density \n";
 
 	int frame_count=0;
 	while(1){

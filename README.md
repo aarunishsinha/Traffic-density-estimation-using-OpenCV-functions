@@ -17,6 +17,7 @@ COP290 - Design Practices
 
 ### Implementation:
 - We computed the densities for every 3rd frame in the video(starting from the first frame).
+- We have chose the background image from density calculation from the video.
 - For computing the dynamic density we used the previous frame used for computation as control to obseerve the displacement of the vehiles.
 - Plotting has been done using Matplotlib.
 ### README:
@@ -27,5 +28,9 @@ $ make
 To Run:
 ```
 $ ./1_subtask <video_path_name>
+```
+In order to run the program properly on a different video give an appropriate background image as input.
+```
+$ ./1_subtask <video_path_name> <bg_image_path_name>
 ```
 The output will appear on the terminal window. First line of output is ```framenum,queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.

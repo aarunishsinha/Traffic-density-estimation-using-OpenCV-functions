@@ -162,8 +162,8 @@ int main( int argc, char** argv)
     // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
 	
 	// Read the video file
-	if (argc >2){
-		cout<<"This program takes a single arguement \n";
+	if (argc >3){
+		cout<<"This program takes two arguements only \n";
 		return -1;
 	}
 	else if(argc <2){
@@ -182,7 +182,16 @@ int main( int argc, char** argv)
 	VideoCapture temp(argv[1]);
 	temp.set(1,1995);
 	Mat bgimg;
-	temp>>bgimg;
+	if (argc >2){
+		bgimg = imread(argv[2], IMREAD_COLOR);
+		if (bgimg.empty()){
+			cout<<"Error opening background image \n";
+			return -1;
+		}
+	}
+	else{
+		temp>>bgimg;
+	}
 	bgimg = cropFrame(bgimg);
 	Mat prevFrame = bgimg.clone();
 	
@@ -242,10 +251,10 @@ int main( int argc, char** argv)
 		prevFrame = processedFrame;
 		
 		// esc key pressed to exit from video
-		char ch=(char)waitKey(1);
-		if(ch==27){
-			break;
-		}
+		// char ch=(char)waitKey(1);
+		// if(ch==27){
+		// 	break;
+		// }
 	}
 	
 	q_dens.close();

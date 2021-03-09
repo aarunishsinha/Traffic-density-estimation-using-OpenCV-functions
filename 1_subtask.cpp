@@ -3,7 +3,7 @@
 #include <opencv2/highgui.hpp>
 #include <iostream>
 #include <fstream>
-// #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
+#include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 using namespace cv;
 using namespace std;
@@ -11,12 +11,12 @@ using namespace std;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
-// void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
-// 	Display* disp = XOpenDisplay(NULL);
-// 	Screen* screen = DefaultScreenOfDisplay(disp);
-// 	SCREEN_WIDTH = screen->width;
-// 	SCREEN_HEIGHT = screen->height;
-// }
+void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
+ 	Display* disp = XOpenDisplay(NULL);
+	Screen* screen = DefaultScreenOfDisplay(disp);
+	SCREEN_WIDTH = screen->width;
+	SCREEN_HEIGHT = screen->height;
+}
 
  
 void createWindow(string WindowName, Mat &img){
@@ -24,16 +24,16 @@ void createWindow(string WindowName, Mat &img){
 	
 	namedWindow(WindowName, WINDOW_KEEPRATIO);
 	
-	// if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
-	// 	double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
-	// 	double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
-	// 	double scale=min(scale_width,scale_height);
+	if(img.size[1]>SCREEN_WIDTH || img.size[0]>SCREEN_HEIGHT){		// UNCOMMENT TO RESIZE WINDOW
+		double scale_width= (double)(SCREEN_WIDTH)/img.size[1];
+		double scale_height= (double)(SCREEN_HEIGHT)/img.size[0];
+		double scale=min(scale_width,scale_height);
 		
-	// 	int window_width=scale*img.size[1];
-	// 	int window_height=scale*img.size[0];
+		int window_width=scale*img.size[1];
+		int window_height=scale*img.size[0];
 		
-	// 	resizeWindow(WindowName,window_width,window_height);
-	// }
+		resizeWindow(WindowName,window_width,window_height);
+	}
 }
 
 // Crop and warp a frame in a video
@@ -48,20 +48,7 @@ Mat cropFrame(Mat& im_src){
     Mat im_projected (size, CV_8UC4);
     im_projected = 0;
 	
-	// // points to project the corner points of road
- //    vector<Point2f> pts_projected;
- //    pts_projected.push_back(Point2f(600,200));
- //    pts_projected.push_back(Point2f(1200,200));
- //    pts_projected.push_back(Point2f(1200,1000));
- //    pts_projected.push_back(Point2f(600,1000));
-    
- //    // corner points of road in the empty.jpg image given in subtask1
- //    vector<Point2f> pts_roadCorners;
- //    pts_roadCorners.push_back(Point2f(950,213));
- //    pts_roadCorners.push_back(Point2f(1263,207));
- //    pts_roadCorners.push_back(Point2f(1515,1061));
- //    pts_roadCorners.push_back(Point2f(300,1073));
-
+	// points to project the corner points of road
     vector<Point2f> pts_projected;
     pts_projected.push_back(Point2f(750,210));
     pts_projected.push_back(Point2f(1100,210));
@@ -87,26 +74,13 @@ Mat cropFrame(Mat& im_src){
 }
 
 
-/*Mat diffImg(Mat& img, Mat& bg){
-	Mat temp;
-	absdiff(img, bg, temp);
-	Mat dst;
-	threshold( temp, dst, 60, 255, THRESH_BINARY );
-	
-	Mat res=dst;
-	
-	return res;
-}*/
-
-
-Mat diff(Mat& img, Mat& bg){
-	//blur( img, img, Size(3,3) );
+Mat diffStatic(Mat& img, Mat& bg){
 	Mat temp ;
 	absdiff(img, bg, temp);
 	for(int i=0;i<img.rows;i++){
 		for(int j=0;j<img.cols;j++){
 			int val = (int)(img.at<uchar>(i,j)) - (int)(bg.at<uchar>(i,j));
-			if(val<=10 && val>=-95){
+			if((val<=5 && val>=-40) || (val<=-85 && val>=-95)){
 				temp.at<uchar>(i,j) = 0;
 			}
 			else{
@@ -118,26 +92,58 @@ Mat diff(Mat& img, Mat& bg){
 	Mat er;
 	Mat muler;
 	erode(temp, er, getStructuringElement(MORPH_RECT,Size(3,3)));
-	dilate(er, muler, getStructuringElement(MORPH_RECT,Size(3,3)));
+	dilate(er, er, getStructuringElement(MORPH_RECT,Size(7,7)));
+	dilate(er, muler, getStructuringElement(MORPH_RECT,Size(7,7)));
 	
 	return muler;
 }
 
 
+Mat diffMoving(Mat& img, Mat& bg){
+	Mat temp ;
+	absdiff(img, bg, temp);
+	for(int i=0;i<img.rows;i++){
+		for(int j=0;j<img.cols;j++){
+			int val = (int)(img.at<uchar>(i,j)) - (int)(bg.at<uchar>(i,j));
+			if((val<=5 && val>=-2) || (val<=-5 && val>=-25)){
+				temp.at<uchar>(i,j) = 0;
+			}
+			else{
+				temp.at<uchar>(i,j) = 255;
+			}
+		}
+	}
+	
+	Mat er;
+	Mat muler;
+	erode(temp, er, getStructuringElement(MORPH_RECT,Size(7,7)));
+	dilate(er, er, getStructuringElement(MORPH_RECT,Size(7,7)));
+	dilate(er, muler, getStructuringElement(MORPH_RECT,Size(7,7)));
+	
+	return muler;
+}
+
+Mat simpleDiff(Mat& img, Mat& bg){
+	Mat temp ;
+	absdiff(img, bg, temp);
+	for(int i=0;i<img.rows;i++){
+		for(int j=0;j<img.cols;j++){
+			int val = (int)(img.at<uchar>(i,j)) - (int)(bg.at<uchar>(i,j));
+			if(val<=5 && val>=-5){
+				temp.at<uchar>(i,j) = 0;
+			}
+			else{
+				temp.at<uchar>(i,j) = 255;
+			}
+		}
+	}
+	
+	return temp;
+}
+
+
+
 float estimatedVehicle(Mat& res){
-	// int queue_density = 0;
-	// vector<vector<Point>> contours;
-	// vector<Vec4i> hierarchy;
-	// findContours(res, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
-	// int total = 0;
-	// for(auto cntr: contours){
-	// 	if(contourArea(cntr)>=2500){
-	// 		queue_density++;
-	// 	}
-	// 	total++;
-	// }
-	// float dens = (float)queue_density / (float)total;
-	// return dens;
 	int count = 0;
 	int total = 0;
 	for(int i=0;i<res.rows;i++){
@@ -152,13 +158,11 @@ float estimatedVehicle(Mat& res){
 	return density;
 }
 
-
 int main( int argc, char** argv)
 {	
 	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
-    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
-    
+    getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
 	
 	// Read the video file
 	VideoCapture cap("trafficvideo.mp4");
@@ -169,7 +173,7 @@ int main( int argc, char** argv)
 		return -1;
 	}
 	
-	// Frame 1995(TS-> 2:15) set as background image.
+	// Frame 1995(TS-> 2:13) set as background image.
 	VideoCapture temp("trafficvideo.mp4");
 	temp.set(1,1995);
 	Mat bgimg;
@@ -184,6 +188,7 @@ int main( int argc, char** argv)
 	q_dens.open ("Plotting/queue_density.txt");
 	ofstream d_dens;
 	d_dens.open ("Plotting/dynamic_density.txt");
+	
 
 	int frame_count=0;
 	while(1){
@@ -196,7 +201,7 @@ int main( int argc, char** argv)
 		}
 		
 		frame_count++;
-		if(frame_count%3!=1){
+		if(frame_count%5!=1){
 			continue;
 		}
 		
@@ -206,7 +211,7 @@ int main( int argc, char** argv)
 		imshow("Video Frame", processedFrame);
 		
 		// remove background and highlight all the vehicles
-		Mat allVehicles = diff(processedFrame,bgimg);
+		Mat allVehicles = diffStatic(processedFrame,bgimg);
 		createWindow("All Vehicles", allVehicles);
 		imshow("All Vehicles", allVehicles);
 		
@@ -214,10 +219,10 @@ int main( int argc, char** argv)
 		float queue_density= estimatedVehicle(allVehicles);
 		cout<<"Queue Density of frame "<<frame_count<<" is "<<queue_density<<"\n";
 		q_dens<<queue_density<<",";
-		frames<<frame_count<<",";
+		frames<<(float)frame_count/15.0<<",";
 		
 		// remove background using previous frame to highlight moving vehicles
-		Mat movingVehicles = diff(processedFrame,prevFrame);
+		Mat movingVehicles = diffMoving(processedFrame,prevFrame);
 		createWindow("Moving Vehicles",movingVehicles);
 		imshow("Moving Vehicles",movingVehicles);
 		
@@ -229,7 +234,7 @@ int main( int argc, char** argv)
 		prevFrame = processedFrame;
 		
 		// esc key pressed to exit from video
-		char ch=(char)waitKey(25);
+		char ch=(char)waitKey(1);
 		if(ch==27){
 			break;
 		}
@@ -245,20 +250,3 @@ int main( int argc, char** argv)
 	return 0;
     
 }
-
-
-/*
-// points to project the corner points of road
-    vector<Point2f> pts_projected;
-    pts_projected.push_back(Point2f(750,210));
-    pts_projected.push_back(Point2f(1100,210));
-    pts_projected.push_back(Point2f(1100,1050));
-    pts_projected.push_back(Point2f(750,1050));
-    
-    // corner points of road in the empty.jpg image given in subtask1
-    vector<Point2f> pts_roadCorners;
-    pts_roadCorners.push_back(Point2f(981,213));
-    pts_roadCorners.push_back(Point2f(1263,207));
-    pts_roadCorners.push_back(Point2f(1515,1061));
-    pts_roadCorners.push_back(Point2f(381,1073));
-*/

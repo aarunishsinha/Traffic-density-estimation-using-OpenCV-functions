@@ -9,7 +9,7 @@ def main():
 	dyna = (file2.read()).split(",")[:-1]
 	dyna = [float(x) for x in dyna]
 	frames = (file3.read()).split(",")[:-1]
-	frames = [int(x) for x in frames]
+	frames = [float(x) for x in frames]
 	plt.figure()
 	plt.xlabel("Frame Number")
 	plt.ylabel("Density")

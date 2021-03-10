@@ -10,7 +10,7 @@ def main():
 	dyna = [float(x) for x in dyna]
 	frames = (file3.read()).split(",")[:-1]
 	frames = [int(x) for x in frames]
-	frames = [x/15 for x in frames]
+	# frames = [x/15 for x in frames]
 	plt.figure()
 	plt.xlabel("Time (in seconds)")
 	plt.ylabel("Density")

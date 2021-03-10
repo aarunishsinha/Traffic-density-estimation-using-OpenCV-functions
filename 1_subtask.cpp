@@ -204,7 +204,7 @@ int main( int argc, char** argv)
 	d_dens.open ("Plotting/dynamic_density.txt");
 	ofstream output;
 	output.open ("Plotting/out.txt");
-	cout<<"framenum,queue density,dynamic density \n";
+	cout<<"time(in secs),queue density,dynamic density \n";
 
 	int frame_count=0;
 	while(1){
@@ -240,13 +240,13 @@ int main( int argc, char** argv)
 		Mat movingVehicles = diffMoving(processedFrame,prevFrame);
 		//createWindow("Moving Vehicles",movingVehicles);
 		//imshow("Moving Vehicles",movingVehicles);
-		
+		float time_secs = (float)frame_count / 15.0;
 		// calculate moving vehicle count on road
 		float dynamic_density = estimatedVehicle(movingVehicles);
 		d_dens<<dynamic_density<<",";
 		
-		cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
-		output<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
+		cout<<time_secs<<","<<queue_density<<","<<dynamic_density<<"\n";
+		output<<time_secs<<","<<queue_density<<","<<dynamic_density<<"\n";
 		
 		prevFrame = processedFrame;
 		

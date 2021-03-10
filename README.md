@@ -33,4 +33,4 @@ In order to run the program properly on a different video give an appropriate ba
 ```
 $ ./1_subtask <video_path_name> <bg_image_path_name>
 ```
-The output will appear on the terminal window. First line of output is ```framenum,queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.
+The output will appear on the terminal window. First line of output is ```time(in secs),queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.

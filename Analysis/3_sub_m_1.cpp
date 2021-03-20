@@ -6,8 +6,8 @@
 #include <fstream>
 // #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
-#define baseline_q 0.53045f
-#define baseline_d 0.05110f
+#define baseline_q 0.530452f
+#define baseline_d 0.0511016f
 
 using namespace cv;
 using namespace std;
@@ -175,6 +175,8 @@ void density_est(int& x,ofstream& method1){
 	Mat prevFrame = bgimg.clone();
 
 	int frame_count=0;
+	float queue_density = 0.0;
+	float dynamic_density = 0.0;
 	float total_queue_density = 0.0;
 	float total_dynamic_density = 0.0;
 	time_t start, end;
@@ -190,6 +192,9 @@ void density_est(int& x,ofstream& method1){
 		
 		frame_count++;
 		if(frame_count%x!=1 && x!=1){
+			total_queue_density+= queue_density;
+			total_dynamic_density+= dynamic_density;
+			// cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
 			continue;
 		}
 		
@@ -200,7 +205,7 @@ void density_est(int& x,ofstream& method1){
 		Mat allVehicles = diffStatic(processedFrame,bgimg);
 		
 		// calculate vehicle count on road
-		float queue_density= estimatedVehicle(allVehicles);
+		queue_density= estimatedVehicle(allVehicles);
 		total_queue_density+= queue_density;
 		
 		// remove background using previous frame to highlight moving vehicles
@@ -208,7 +213,7 @@ void density_est(int& x,ofstream& method1){
 
 		float time_secs = (float)frame_count / 15.0;
 		// calculate moving vehicle count on road
-		float dynamic_density = estimatedVehicle(movingVehicles);
+		dynamic_density = estimatedVehicle(movingVehicles);
 		total_dynamic_density+= dynamic_density;
 		
 		// cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
@@ -221,7 +226,8 @@ void density_est(int& x,ofstream& method1){
 	float avg_dynamic_density = total_dynamic_density / (float) frame_count;
 	float squared_error_queue = (avg_queue_density - baseline_q)*(avg_queue_density - baseline_q);
 	float squared_error_dynamic = (avg_dynamic_density - baseline_d)*(avg_dynamic_density - baseline_d);
-	// cout<<"Runtime ="<<avg_dynamic_density<<endl;
+	cout<<"Average queue_density ="<<avg_queue_density<<endl;
+	cout<<"Average dynamic_density ="<<avg_dynamic_density<<endl;
 	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
 	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
 
@@ -235,12 +241,13 @@ void density_est(int& x,ofstream& method1){
 
 int main( int argc, char** argv)
 {	
-	int x = 1;
 	ofstream method1;
 	method1.open ("method1.txt");
-	density_est(x,method1);
-	x = 2;
-	density_est(x,method1);
+	for(int x=1;x<11;x++){
+		density_est(x,method1);
+	}
+	// x = 3;
+	// density_est(x,method1);
 	method1.close();
 	return 0;
     

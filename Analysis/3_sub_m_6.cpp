@@ -20,9 +20,7 @@ struct thread_data{
 
 vector<float> global_queue;
 vector<float> global_dynamic;
-vector<vector<Mat>> allFrames;
 pthread_mutex_t lock1;
-pthread_mutex_t lock2;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
@@ -175,6 +173,12 @@ void *forkfunc(void *threadarg){
 	int num_threads = my_data->total_threads;
 	int thread_num = my_data->thread_id;
 
+	VideoCapture cap("../trafficvideo.mp4");
+	if(!cap.isOpened()){
+		cout<<"Error opening video file \n";
+	}
+
+	// Frame 1995(TS-> 2:13) set as background image.
 	VideoCapture temp("../trafficvideo.mp4");
 	temp.set(1,1995);
 	Mat bgimg;
@@ -209,12 +213,26 @@ void *forkfunc(void *threadarg){
 
     // cout <<thread_num<<" Entering Loop"<<endl;
 
-    for(int i = 0; i< allFrames.size();i++){
+    while(1){
     	Mat frame;
-    	pthread_mutex_lock(&lock2);
-    	frame = allFrames[i][thread_num].clone();
-    	pthread_mutex_unlock(&lock2);
+    	cap>>frame;
+    	// video ends
+		if(frame.empty()){
+			break;
+		}
+    	Mat processedFrame = cropFrame(frame);
+    	frame = processedFrame.clone();
     	frame_count++;
+
+    	vector<Mat> frameSections(num_threads);
+    	int x = 0;
+    	int y = 0;
+    	int a = 0;
+    	for(y=0; y+cell_Height<=frame.rows; y+=cell_Height){
+    		frameSections[a] = frame(Rect(x, y, cell_Width, cell_Height));
+    		a++;
+    	}
+    	frame = frameSections[thread_num].clone();
 
     	// cout<<thread_num<< " Frame done: " << frame_count<<endl;
 
@@ -228,61 +246,26 @@ void *forkfunc(void *threadarg){
 
     	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
 
-    	prevFrame = frame.clone();
+    	prevFrame = frame;
     }
     float avg_queue = total_queue_density_in_split / (float) frame_count;
     float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
     // cout<<thread_num<< " AVG calculated"<<endl;
 
     pthread_mutex_lock(&lock1);
-    global_queue.push_back(avg_queue);
+    global_queue.push_back(avg_queue); // ERRORRRRRRRRRR
     global_dynamic.push_back(avg_dynamic);
     pthread_mutex_unlock(&lock1);
 
     // cout << thread_num<< " Stored in vector"<<endl;
+    cap.release();
     pthread_exit(NULL);
 }
 void density_est(int& num_threads){
-	time_t start, end;
-	time(&start);
-	// Storing
-	VideoCapture temp("../trafficvideo.mp4");
-	temp.set(1,1995);
-	Mat bgimg;
-	temp>>bgimg;
-	bgimg = cropFrame(bgimg);
-
-	int cell_Height = bgimg.rows / num_threads;
-    int cell_Width = bgimg.cols;
-    temp.release();
-	VideoCapture cap("../trafficvideo.mp4");
-	if(!cap.isOpened()){
-		cout<<"Error opening video file \n";
-	}
-	while(1){
-    	Mat frame;
-    	cap>>frame;
-    	// video ends
-		if(frame.empty()){
-			break;
-		}
-    	Mat processedFrame = cropFrame(frame);
-    	frame = processedFrame.clone();
-
-    	vector<Mat> frameSections(num_threads);
-    	int x = 0;
-    	int y = 0;
-    	int a = 0;
-    	for(y=0; y+cell_Height<=frame.rows; y+=cell_Height){
-    		frameSections[a] = frame(Rect(x, y, cell_Width, cell_Height));
-    		a++;
-    	}
-    	allFrames.push_back(frameSections);
-    }
-    cap.release();
-    cout << allFrames.size()<<endl;
     // Initialising threads
     pthread_t threads[num_threads];
+	time_t start, end;
+	time(&start);
 	void *status;
 
 	struct thread_data td[num_threads];
@@ -335,7 +318,7 @@ void density_est(int& num_threads){
 
 int main( int argc, char** argv)
 {	
-	int num_threads = 8;
+	int num_threads = 4;
 	density_est(num_threads);
 	return 0;
     

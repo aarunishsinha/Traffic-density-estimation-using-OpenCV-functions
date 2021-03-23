@@ -15,3 +15,5 @@ clean2:
 clean3:
 		rm ./3_method
 		rm method3.txt
+clean4:
+		rm ./4_method

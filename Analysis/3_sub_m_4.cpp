@@ -20,6 +20,7 @@ struct thread_data{
 
 vector<float> global_queue;
 vector<float> global_dynamic;
+pthread_mutex_t lock1;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
@@ -215,11 +216,15 @@ void *forkfunc(void *threadarg){
     bgimg = bgimgSections[thread_num].clone();
     Mat prevFrame = bgimg.clone();
 
+    // cout <<thread_num<< " BG done"<<endl;
+
     float queue_density = 0.0;
     float dynamic_density = 0.0;
     float total_queue_density_in_split = 0.0;
     float total_dynamic_density_in_split = 0.0;
     int frame_count = 0;
+
+    // cout <<thread_num<<" Entering Loop"<<endl;
 
     while(1){
     	Mat frame;
@@ -242,6 +247,8 @@ void *forkfunc(void *threadarg){
     	}
     	frame = frameSections[thread_num].clone();
 
+    	// cout<<thread_num<< " Frame done: " << frame_count<<endl;
+
     	Mat allVehicles = diffStatic(frame,bgimg);
     	queue_density = estimatedVehicle(allVehicles);
     	total_queue_density_in_split += queue_density;
@@ -250,12 +257,20 @@ void *forkfunc(void *threadarg){
     	dynamic_density = estimatedVehicle(movingVehicles);
     	total_dynamic_density_in_split += dynamic_density;
 
+    	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
+
     	prevFrame = frame;
     }
     float avg_queue = total_queue_density_in_split / (float) frame_count;
     float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
-    global_queue[thread_num] = avg_queue;
-    global_dynamic[thread_num] = avg_dynamic;
+    // cout<<thread_num<< " AVG calculated"<<endl;
+
+    pthread_mutex_lock(&lock1);
+    global_queue.push_back(avg_queue); // ERRORRRRRRRRRR
+    global_dynamic.push_back(avg_dynamic);
+    pthread_mutex_unlock(&lock1);
+
+    // cout << thread_num<< " Stored in vector"<<endl;
     cap.release();
     pthread_exit(NULL);
 }
@@ -311,8 +326,6 @@ void density_est(int& num_threads){
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
- //    method3<<x<<","<<y<<","<<squared_error_queue<<","<<squared_error_dynamic<<","<<time_taken<<"\n";
-	// cap.release();
 }
 
 

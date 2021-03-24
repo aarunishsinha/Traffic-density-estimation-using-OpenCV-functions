@@ -1,10 +1,12 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/video.hpp>
+#include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
 #include <fstream>
-#include <pthread.h>
 // #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 #define baseline_q 0.530452f
@@ -13,14 +15,6 @@
 using namespace cv;
 using namespace std;
 
-struct thread_data{
-	int total_threads;
-	int thread_id;
-};
-
-vector<float> global_queue;
-vector<float> global_dynamic;
-pthread_mutex_t lock1;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
@@ -167,159 +161,97 @@ float estimatedVehicle(Mat& res){
 	float density = (float)count / (float)total;
 	return density;
 }
-void *forkfunc(void *threadarg){
-	struct thread_data *my_data;
-	my_data = (struct thread_data *) threadarg;
-	int num_threads = my_data->total_threads;
-	int thread_num = my_data->thread_id;
 
+int main( int argc, char** argv)
+{	
 	VideoCapture cap("../trafficvideo.mp4");
+
+	// check if capturing has been initialized properly
 	if(!cap.isOpened()){
 		cout<<"Error opening video file \n";
 	}
 
 	// Frame 1995(TS-> 2:13) set as background image.
-	VideoCapture temp("../trafficvideo.mp4");
-	temp.set(1,1995);
-	Mat bgimg;
-	temp>>bgimg;
-	bgimg = cropFrame(bgimg);
+	// VideoCapture temp("../trafficvideo.mp4");
+	// temp.set(1,1995);
+	// Mat bgimg;
+	// temp>>bgimg;
+	// bgimg = cropFrame(bgimg);
+	// Mat prevFrame = bgimg.clone();
 
-	int cell_Height = bgimg.rows / num_threads;
-    int cell_Width = bgimg.cols;
-
-    // Splitting the Background image
-    vector<Mat> bgimgSections(num_threads);
-    int x = 0;
-    int y = 0;
-    int a = 0;
-
-    for(y=0; y+cell_Height<=bgimg.rows; y+=cell_Height)
-    {   
-        bgimgSections[a] = bgimg(Rect(x, y, cell_Width, cell_Height));
-        a++;
+	vector<Scalar> colors;
+    RNG rng;
+    for(int i = 0; i < 100; i++)
+    {
+        int r = rng.uniform(0, 256);
+        int g = rng.uniform(0, 256);
+        int b = rng.uniform(0, 256);
+        colors.push_back(Scalar(r,g,b));
     }
+    Mat old_frame, old_gray;
+    vector<Point2f> p0, p1;
+    // Take first frame and find corners in it
+    cap>>old_frame;
+    old_gray=cropFrame(old_frame);
+    goodFeaturesToTrack(old_gray, p0, 100, 0.3, 7, Mat(), 7, false, 0.04);
 
-    bgimg = bgimgSections[thread_num].clone();
-    Mat prevFrame = bgimg.clone();
+    // Create a mask image for drawing purposes
+    Mat mask = Mat::zeros(old_gray.size(), old_gray.type());
 
-    // cout <<thread_num<< " BG done"<<endl;
 
-    float queue_density = 0.0;
-    float dynamic_density = 0.0;
-    float total_queue_density_in_split = 0.0;
-    float total_dynamic_density_in_split = 0.0;
-    int frame_count = 0;
-
-    // cout <<thread_num<<" Entering Loop"<<endl;
-
-    while(1){
-    	Mat frame;
-    	cap>>frame;
-    	// video ends
+	int frame_count=0;
+	float dynamic_density = 0.0;
+	float total_dynamic_density = 0.0;
+	time_t start, end;
+	time(&start);
+	while(1){
+		Mat frame, frame_gray;
+		cap>>frame;
+		
+		// video ends
 		if(frame.empty()){
 			break;
 		}
-    	Mat processedFrame = cropFrame(frame);
-    	frame = processedFrame.clone();
-    	frame_count++;
+		
+		frame_count++;
+		
+		frame_gray=cropFrame(frame);
 
-    	vector<Mat> frameSections(num_threads);
-    	int x = 0;
-    	int y = 0;
-    	int a = 0;
-    	for(y=0; y+cell_Height<=frame.rows; y+=cell_Height){
-    		frameSections[a] = frame(Rect(x, y, cell_Width, cell_Height));
-    		a++;
-    	}
-    	frame = frameSections[thread_num].clone();
+		vector<uchar> status;
+        vector<float> err;
+        TermCriteria criteria = TermCriteria((TermCriteria::COUNT) + (TermCriteria::EPS), 10, 0.03);
+        calcOpticalFlowPyrLK(old_gray, frame_gray, p0, p1, status, err, frame_gray.size(), 2, criteria);
+        vector<Point2f> good_new;
 
-    	// cout<<thread_num<< " Frame done: " << frame_count<<endl;
+        for(uint i = 0; i < p0.size(); i++)
+        {
+            // Select good points
+            if(status[i] == 1) {
+                good_new.push_back(p1[i]);
+                // draw the tracks
+                line(mask,p1[i], p0[i], colors[i], 2);
+                circle(frame_gray, p1[i], 5, colors[i], -1);
+            }
+        }
 
-    	Mat allVehicles = diffStatic(frame,bgimg);
-    	queue_density = estimatedVehicle(allVehicles);
-    	total_queue_density_in_split += queue_density;
-
-    	Mat movingVehicles = diffMoving(frame,prevFrame);
-    	dynamic_density = estimatedVehicle(movingVehicles);
-    	total_dynamic_density_in_split += dynamic_density;
-
-    	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
-
-    	prevFrame = frame;
-    }
-    float avg_queue = total_queue_density_in_split / (float) frame_count;
-    float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
-    // cout<<thread_num<< " AVG calculated"<<endl;
-
-    pthread_mutex_lock(&lock1);
-    global_queue.push_back(avg_queue); // ERRORRRRRRRRRR
-    global_dynamic.push_back(avg_dynamic);
-    pthread_mutex_unlock(&lock1);
-
-    // cout << thread_num<< " Stored in vector"<<endl;
-    cap.release();
-    pthread_exit(NULL);
-}
-void density_est(int& num_threads){
-    // Initialising threads
-    pthread_t threads[num_threads];
-	time_t start, end;
-	time(&start);
-	void *status;
-
-	struct thread_data td[num_threads];
-
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	int rc;
-	for(int i = 0; i<num_threads; i++){
-		cout << "main() : creating thread, " << i << endl;
-		td[i].thread_id = i;
-		td[i].total_threads = num_threads;
-		rc = pthread_create(&threads[i], &attr, forkfunc, (void *)&td[i]);
-		if (rc) {
-     		cout << "Error:unable to create thread," << rc << endl;
-     		exit(-1);
-  		}
+        Mat img;
+        add(frame_gray, mask, img);
+        imshow("Frame", img);
+        int keyboard = waitKey(30);
+        if (keyboard == 'q' || keyboard == 27)
+            break;
+        // Now update the previous frame and previous points
+        old_gray = frame_gray.clone();
+        p0 = good_new;
+		
 	}
-	pthread_attr_destroy(&attr);
-		for(int i = 0; i < num_threads; i++ ) {
-  		rc = pthread_join(threads[i], &status);
-  		if (rc) {
-     		cout << "Error:unable to join," << rc << endl;
-     		exit(-1);
-  		}
-  		cout << "Main: completed thread id :" << i <<endl;
-  	}
-	
 	time(&end);
-	float q = 0;
-	float d = 0;
-	for(int i=0;i<num_threads;i++){
-		q+= global_queue[i];
-		d+= global_dynamic[i];
-	}
-	q = q / (float) num_threads;
-	d = d / (float) num_threads;
-	float squared_error_queue = (q - baseline_q)*(q - baseline_q);
-	float squared_error_dynamic = (d - baseline_d)*(d - baseline_d);
-	cout<<"Average queue_density ="<<q<<endl;
-	cout<<"Average dynamic_density ="<<d<<endl;
-	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
-	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
+
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
-}
-
-
-int main( int argc, char** argv)
-{	
-	int num_threads = 4;
-	density_est(num_threads);
+	cap.release();
 	return 0;
     
 }

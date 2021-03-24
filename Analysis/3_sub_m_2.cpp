@@ -1,8 +1,5 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/video.hpp>
-#include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
@@ -161,9 +158,8 @@ float estimatedVehicle(Mat& res){
 	float density = (float)count / (float)total;
 	return density;
 }
+void density_est(int& x,int& y,ofstream& method2){
 
-int main( int argc, char** argv)
-{	
 	VideoCapture cap("../trafficvideo.mp4");
 
 	// check if capturing has been initialized properly
@@ -172,40 +168,24 @@ int main( int argc, char** argv)
 	}
 
 	// Frame 1995(TS-> 2:13) set as background image.
-	// VideoCapture temp("../trafficvideo.mp4");
-	// temp.set(1,1995);
-	// Mat bgimg;
-	// temp>>bgimg;
-	// bgimg = cropFrame(bgimg);
-	// Mat prevFrame = bgimg.clone();
-
-	vector<Scalar> colors;
-    RNG rng;
-    for(int i = 0; i < 100; i++)
-    {
-        int r = rng.uniform(0, 256);
-        int g = rng.uniform(0, 256);
-        int b = rng.uniform(0, 256);
-        colors.push_back(Scalar(r,g,b));
-    }
-    Mat old_frame, old_gray;
-    vector<Point2f> p0, p1;
-    // Take first frame and find corners in it
-    cap>>old_frame;
-    old_gray=cropFrame(old_frame);
-    goodFeaturesToTrack(old_gray, p0, 100, 0.3, 7, Mat(), 7, false, 0.04);
-
-    // Create a mask image for drawing purposes
-    Mat mask = Mat::zeros(old_gray.size(), old_gray.type());
-
+	VideoCapture temp("../trafficvideo.mp4");
+	temp.set(1,1995);
+	Mat bgimg;
+	temp>>bgimg;
+	bgimg = cropFrame(bgimg);
+	Mat bgimg_low_res;
+	resize(bgimg,bgimg_low_res,Size(y,x),0,0,INTER_LANCZOS4);
+	Mat prevFrame = bgimg_low_res.clone();
 
 	int frame_count=0;
+	float queue_density = 0.0;
 	float dynamic_density = 0.0;
+	float total_queue_density = 0.0;
 	float total_dynamic_density = 0.0;
 	time_t start, end;
 	time(&start);
 	while(1){
-		Mat frame, frame_gray;
+		Mat frame;
 		cap>>frame;
 		
 		// video ends
@@ -215,43 +195,59 @@ int main( int argc, char** argv)
 		
 		frame_count++;
 		
-		frame_gray=cropFrame(frame);
+		// project and crop the particular frame
+		Mat processedFrame_1 = cropFrame(frame);
+		Mat processedFrame;
+		resize(processedFrame_1,processedFrame,Size(y,x),0,0,INTER_LANCZOS4);
 
-		vector<uchar> status;
-        vector<float> err;
-        TermCriteria criteria = TermCriteria((TermCriteria::COUNT) + (TermCriteria::EPS), 10, 0.03);
-        calcOpticalFlowPyrLK(old_gray, frame_gray, p0, p1, status, err, frame_gray.size(), 2, criteria);
-        vector<Point2f> good_new;
-
-        for(uint i = 0; i < p0.size(); i++)
-        {
-            // Select good points
-            if(status[i] == 1) {
-                good_new.push_back(p1[i]);
-                // draw the tracks
-                line(mask,p1[i], p0[i], colors[i], 2);
-                circle(frame_gray, p1[i], 5, colors[i], -1);
-            }
-        }
-
-        Mat img;
-        add(frame_gray, mask, img);
-        imshow("Frame", img);
-        int keyboard = waitKey(30);
-        if (keyboard == 'q' || keyboard == 27)
-            break;
-        // Now update the previous frame and previous points
-        old_gray = frame_gray.clone();
-        p0 = good_new;
+		// remove background and highlight all the vehicles
+		Mat allVehicles = diffStatic(processedFrame,bgimg_low_res);
 		
+		// calculate vehicle count on road
+		queue_density= estimatedVehicle(allVehicles);
+		total_queue_density+= queue_density;
+		
+		// remove background using previous frame to highlight moving vehicles
+		Mat movingVehicles = diffMoving(processedFrame,prevFrame);
+
+		float time_secs = (float)frame_count / 15.0;
+		// calculate moving vehicle count on road
+		dynamic_density = estimatedVehicle(movingVehicles);
+		total_dynamic_density+= dynamic_density;
+		
+		// cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
+		
+		prevFrame = processedFrame;
 	}
 	time(&end);
+
+	float avg_queue_density = total_queue_density / (float) frame_count;
+	float avg_dynamic_density = total_dynamic_density / (float) frame_count;
+	float squared_error_queue = (avg_queue_density - baseline_q)*(avg_queue_density - baseline_q);
+	float squared_error_dynamic = (avg_dynamic_density - baseline_d)*(avg_dynamic_density - baseline_d);
+	cout<<"Average queue_density ="<<avg_queue_density<<endl;
+	cout<<"Average dynamic_density ="<<avg_dynamic_density<<endl;
+	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
+	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
 
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
+    method2<<x<<","<<y<<","<<squared_error_queue<<","<<squared_error_dynamic<<","<<time_taken<<"\n";
 	cap.release();
+}
+
+int main( int argc, char** argv)
+{	
+	ofstream method2;
+	method2.open ("method2.txt");
+	int x=300;
+	int y=300;
+	density_est(x,y,method2);
+	// x = 3;
+	// density_est(x,method1);
+	method2.close();
 	return 0;
     
 }

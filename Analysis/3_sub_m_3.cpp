@@ -4,6 +4,7 @@
 #include <opencv2/highgui.hpp>
 #include <iostream>
 #include <fstream>
+#include <pthread.h>
 // #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
 
 #define baseline_q 0.530452f
@@ -12,6 +13,16 @@
 using namespace cv;
 using namespace std;
 
+struct thread_data{
+	int total_threads;
+	int thread_id;
+};
+
+vector<float> global_queue;
+vector<float> global_dynamic;
+vector<vector<Mat>> allFrames;
+pthread_mutex_t lock1;
+pthread_mutex_t lock2;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
@@ -158,96 +169,174 @@ float estimatedVehicle(Mat& res){
 	float density = (float)count / (float)total;
 	return density;
 }
-void density_est(int& x,int& y,ofstream& method3){
+void *forkfunc(void *threadarg){
+	struct thread_data *my_data;
+	my_data = (struct thread_data *) threadarg;
+	int num_threads = my_data->total_threads;
+	int thread_num = my_data->thread_id;
 
-	VideoCapture cap("../trafficvideo.mp4");
-
-	// check if capturing has been initialized properly
-	if(!cap.isOpened()){
-		cout<<"Error opening video file \n";
-	}
-
-	// Frame 1995(TS-> 2:13) set as background image.
 	VideoCapture temp("../trafficvideo.mp4");
 	temp.set(1,1995);
 	Mat bgimg;
 	temp>>bgimg;
 	bgimg = cropFrame(bgimg);
-	Mat bgimg_low_res;
-	resize(bgimg,bgimg_low_res,Size(y,x),0,0,INTER_LANCZOS4);
-	Mat prevFrame = bgimg_low_res.clone();
 
-	int frame_count=0;
-	float queue_density = 0.0;
-	float dynamic_density = 0.0;
-	float total_queue_density = 0.0;
-	float total_dynamic_density = 0.0;
+	int cell_Height = bgimg.rows / num_threads;
+    int cell_Width = bgimg.cols;
+
+    // Splitting the Background image
+    vector<Mat> bgimgSections(num_threads);
+    int x = 0;
+    int y = 0;
+    int a = 0;
+
+    for(y=0; y+cell_Height<=bgimg.rows; y+=cell_Height)
+    {   
+        bgimgSections[a] = bgimg(Rect(x, y, cell_Width, cell_Height));
+        a++;
+    }
+
+    bgimg = bgimgSections[thread_num].clone();
+    Mat prevFrame = bgimg.clone();
+
+    // cout <<thread_num<< " BG done"<<endl;
+
+    float queue_density = 0.0;
+    float dynamic_density = 0.0;
+    float total_queue_density_in_split = 0.0;
+    float total_dynamic_density_in_split = 0.0;
+    int frame_count = 0;
+
+    // cout <<thread_num<<" Entering Loop"<<endl;
+
+    for(int i = 0; i< allFrames.size();i++){
+    	Mat frame;
+    	pthread_mutex_lock(&lock2);
+    	frame = allFrames[i][thread_num].clone();
+    	pthread_mutex_unlock(&lock2);
+    	frame_count++;
+
+    	// cout<<thread_num<< " Frame done: " << frame_count<<endl;
+
+    	Mat allVehicles = diffStatic(frame,bgimg);
+    	queue_density = estimatedVehicle(allVehicles);
+    	total_queue_density_in_split += queue_density;
+
+    	Mat movingVehicles = diffMoving(frame,prevFrame);
+    	dynamic_density = estimatedVehicle(movingVehicles);
+    	total_dynamic_density_in_split += dynamic_density;
+
+    	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
+
+    	prevFrame = frame.clone();
+    }
+    float avg_queue = total_queue_density_in_split / (float) frame_count;
+    float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
+    // cout<<thread_num<< " AVG calculated"<<endl;
+
+    pthread_mutex_lock(&lock1);
+    global_queue.push_back(avg_queue);
+    global_dynamic.push_back(avg_dynamic);
+    pthread_mutex_unlock(&lock1);
+
+    // cout << thread_num<< " Stored in vector"<<endl;
+    pthread_exit(NULL);
+}
+void density_est(int& num_threads){
 	time_t start, end;
 	time(&start);
+	// Storing
+	VideoCapture temp("../trafficvideo.mp4");
+	temp.set(1,1995);
+	Mat bgimg;
+	temp>>bgimg;
+	bgimg = cropFrame(bgimg);
+
+	int cell_Height = bgimg.rows / num_threads;
+    int cell_Width = bgimg.cols;
+    temp.release();
+	VideoCapture cap("../trafficvideo.mp4");
+	if(!cap.isOpened()){
+		cout<<"Error opening video file \n";
+	}
 	while(1){
-		Mat frame;
-		cap>>frame;
-		
-		// video ends
+    	Mat frame;
+    	cap>>frame;
+    	// video ends
 		if(frame.empty()){
 			break;
 		}
-		
-		frame_count++;
-		
-		// project and crop the particular frame
-		Mat processedFrame_1 = cropFrame(frame);
-		Mat processedFrame;
-		resize(processedFrame_1,processedFrame,Size(y,x),0,0,INTER_LANCZOS4);
+    	Mat processedFrame = cropFrame(frame);
+    	frame = processedFrame.clone();
 
-		// remove background and highlight all the vehicles
-		Mat allVehicles = diffStatic(processedFrame,bgimg_low_res);
-		
-		// calculate vehicle count on road
-		queue_density= estimatedVehicle(allVehicles);
-		total_queue_density+= queue_density;
-		
-		// remove background using previous frame to highlight moving vehicles
-		Mat movingVehicles = diffMoving(processedFrame,prevFrame);
+    	vector<Mat> frameSections(num_threads);
+    	int x = 0;
+    	int y = 0;
+    	int a = 0;
+    	for(y=0; y+cell_Height<=frame.rows; y+=cell_Height){
+    		frameSections[a] = frame(Rect(x, y, cell_Width, cell_Height));
+    		a++;
+    	}
+    	allFrames.push_back(frameSections);
+    }
+    cap.release();
+    cout << allFrames.size()<<endl;
+    // Initialising threads
+    pthread_t threads[num_threads];
+	void *status;
 
-		float time_secs = (float)frame_count / 15.0;
-		// calculate moving vehicle count on road
-		dynamic_density = estimatedVehicle(movingVehicles);
-		total_dynamic_density+= dynamic_density;
-		
-		// cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
-		
-		prevFrame = processedFrame;
+	struct thread_data td[num_threads];
+
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	int rc;
+	for(int i = 0; i<num_threads; i++){
+		cout << "main() : creating thread, " << i << endl;
+		td[i].thread_id = i;
+		td[i].total_threads = num_threads;
+		rc = pthread_create(&threads[i], &attr, forkfunc, (void *)&td[i]);
+		if (rc) {
+     		cout << "Error:unable to create thread," << rc << endl;
+     		exit(-1);
+  		}
 	}
+	pthread_attr_destroy(&attr);
+		for(int i = 0; i < num_threads; i++ ) {
+  		rc = pthread_join(threads[i], &status);
+  		if (rc) {
+     		cout << "Error:unable to join," << rc << endl;
+     		exit(-1);
+  		}
+  		cout << "Main: completed thread id :" << i <<endl;
+  	}
+	
 	time(&end);
-
-	float avg_queue_density = total_queue_density / (float) frame_count;
-	float avg_dynamic_density = total_dynamic_density / (float) frame_count;
-	float squared_error_queue = (avg_queue_density - baseline_q)*(avg_queue_density - baseline_q);
-	float squared_error_dynamic = (avg_dynamic_density - baseline_d)*(avg_dynamic_density - baseline_d);
-	cout<<"Average queue_density ="<<avg_queue_density<<endl;
-	cout<<"Average dynamic_density ="<<avg_dynamic_density<<endl;
+	float q = 0;
+	float d = 0;
+	for(int i=0;i<num_threads;i++){
+		q+= global_queue[i];
+		d+= global_dynamic[i];
+	}
+	q = q / (float) num_threads;
+	d = d / (float) num_threads;
+	float squared_error_queue = (q - baseline_q)*(q - baseline_q);
+	float squared_error_dynamic = (d - baseline_d)*(d - baseline_d);
+	cout<<"Average queue_density ="<<q<<endl;
+	cout<<"Average dynamic_density ="<<d<<endl;
 	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
 	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
-
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
-    method3<<x<<","<<y<<","<<squared_error_queue<<","<<squared_error_dynamic<<","<<time_taken<<"\n";
-	cap.release();
 }
+
 
 int main( int argc, char** argv)
 {	
-	ofstream method3;
-	method3.open ("method3.txt");
-	int x=300;
-	int y=300;
-	density_est(x,y,method3);
-	// x = 3;
-	// density_est(x,method1);
-	method3.close();
+	int num_threads = 8;
+	density_est(num_threads);
 	return 0;
     
 }

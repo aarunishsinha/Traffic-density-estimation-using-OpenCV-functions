@@ -15,14 +15,13 @@ clean1:
 		rm method1.txt
 clean2:
 		rm ./2_method
-
+		rm method2.txt
 clean3:
 		rm ./3_method
-		rm method3.txt
 clean4:
 		rm ./4_method
+		rm out_method_4.txt
 clean5:
 		rm ./5_method
-		rm out_method_5.txt
 clean6:
 		rm ./6_method

@@ -12,7 +12,7 @@ method6:
 		g++ 3_sub_m_6.cpp -o 6_method -pthread -std=c++11 `pkg-config --cflags --libs opencv4`
 clean1:
 		rm ./1_method
-		rm method1.txt
+		rm out_method1.csv
 clean2:
 		rm ./2_method
 		rm method2.txt

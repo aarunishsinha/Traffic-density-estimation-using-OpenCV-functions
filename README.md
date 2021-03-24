@@ -34,3 +34,19 @@ In order to run the program properly on a different video give an appropriate ba
 $ ./1_subtask <video_path_name> <bg_image_path_name>
 ```
 The output will appear on the terminal window. First line of output is ```time(in secs),queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.
+
+## Subtask3: Performance Analysis
+### Method1:
+#### Runtimes for different values of x.
+| x | Runtime |
+|---|---------|
+| 1 | 87.000000 secs |
+| 3 | 37.000000 secs |
+| 5 | 31.000000 secs |
+| 6 | 30.000000 secs |
+| 9 | 23.000000 secs |
+| 10 | 21.000000 secs | 
+| 12 | 22.000000 secs |
+| 15 | 21.000000 secs |
+| 18 | 19.000000 secs |
+| 21 | 20.000000 secs |

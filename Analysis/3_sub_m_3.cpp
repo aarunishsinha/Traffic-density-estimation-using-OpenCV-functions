@@ -1,3 +1,10 @@
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+#include "sys/times.h"
+#include "sys/vtimes.h"
+
+
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -6,6 +13,58 @@
 #include <fstream>
 #include <pthread.h>
 // #include <X11/Xlib.h>                    // UNCOMMENT TO RESIZE WINDOW 
+
+
+
+static clock_t lastCPU, lastSysCPU, lastUserCPU;
+static int numProcessors;
+
+void init(){
+    FILE* file;
+    struct tms timeSample;
+    char line[128];
+
+    lastCPU = times(&timeSample);
+    lastSysCPU = timeSample.tms_stime;
+    lastUserCPU = timeSample.tms_utime;
+
+    file = fopen("/proc/cpuinfo", "r");
+    numProcessors = 0;
+    while(fgets(line, 128, file) != NULL){
+        if (strncmp(line, "processor", 9) == 0) numProcessors++;
+    }
+    fclose(file);
+}
+
+double getCurrentValue(){
+    struct tms timeSample;
+    clock_t now;
+    double percent;
+
+    now = times(&timeSample);
+    if (now <= lastCPU || timeSample.tms_stime < lastSysCPU ||
+        timeSample.tms_utime < lastUserCPU){
+        //Overflow detection. Just skip this value.
+        percent = -1.0;
+    }
+    else{
+        percent = (timeSample.tms_stime - lastSysCPU) +
+            (timeSample.tms_utime - lastUserCPU);
+        percent /= (now - lastCPU);
+        percent /= numProcessors;
+        percent *= 100;
+    }
+    lastCPU = now;
+    lastSysCPU = timeSample.tms_stime;
+    lastUserCPU = timeSample.tms_utime;
+
+    return percent;
+}
+
+
+
+
+
 
 #define baseline_q 0.530452f
 #define baseline_d 0.0511016f
@@ -18,8 +77,8 @@ struct thread_data{
 	int thread_id;
 };
 
-vector<float> global_queue;
-vector<float> global_dynamic;
+vector<vector<float>> global_queue;
+vector<vector<float>> global_dynamic;
 vector<vector<Mat>> allFrames;
 pthread_mutex_t lock1;
 pthread_mutex_t lock2;
@@ -192,6 +251,9 @@ void *forkfunc(void *threadarg){
 
     for(y=0; y+cell_Height<=bgimg.rows; y+=cell_Height)
     {   
+    	if(y+cell_Height+cell_Height>bgimg.rows){
+    		cell_Height = bgimg.rows-y;
+    	}
         bgimgSections[a] = bgimg(Rect(x, y, cell_Width, cell_Height));
         a++;
     }
@@ -220,24 +282,26 @@ void *forkfunc(void *threadarg){
 
     	Mat allVehicles = diffStatic(frame,bgimg);
     	queue_density = estimatedVehicle(allVehicles);
-    	total_queue_density_in_split += queue_density;
+    	global_queue[thread_num].push_back(queue_density);
+    	//total_queue_density_in_split += queue_density;
 
     	Mat movingVehicles = diffMoving(frame,prevFrame);
     	dynamic_density = estimatedVehicle(movingVehicles);
-    	total_dynamic_density_in_split += dynamic_density;
+    	global_dynamic[thread_num].push_back(dynamic_density);
+    	//total_dynamic_density_in_split += dynamic_density;
 
     	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
 
     	prevFrame = frame.clone();
     }
-    float avg_queue = total_queue_density_in_split / (float) frame_count;
-    float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
+    // float avg_queue = total_queue_density_in_split / (float) frame_count;
+    // float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
     // cout<<thread_num<< " AVG calculated"<<endl;
 
-    pthread_mutex_lock(&lock1);
-    global_queue.push_back(avg_queue);
-    global_dynamic.push_back(avg_dynamic);
-    pthread_mutex_unlock(&lock1);
+    // pthread_mutex_lock(&lock1);
+    // global_queue.push_back(avg_queue);
+    // global_dynamic.push_back(avg_dynamic);
+    // pthread_mutex_unlock(&lock1);
 
     // cout << thread_num<< " Stored in vector"<<endl;
     pthread_exit(NULL);
@@ -246,15 +310,6 @@ void density_est(int& num_threads){
 	time_t start, end;
 	time(&start);
 	// Storing
-	VideoCapture temp("../trafficvideo.mp4");
-	temp.set(1,1995);
-	Mat bgimg;
-	temp>>bgimg;
-	bgimg = cropFrame(bgimg);
-
-	int cell_Height = bgimg.rows / num_threads;
-    int cell_Width = bgimg.cols;
-    temp.release();
 	VideoCapture cap("../trafficvideo.mp4");
 	if(!cap.isOpened()){
 		cout<<"Error opening video file \n";
@@ -268,12 +323,16 @@ void density_est(int& num_threads){
 		}
     	Mat processedFrame = cropFrame(frame);
     	frame = processedFrame.clone();
-
+		int cell_Height = frame.rows / num_threads;
+    	int cell_Width = frame.cols;
     	vector<Mat> frameSections(num_threads);
     	int x = 0;
     	int y = 0;
     	int a = 0;
     	for(y=0; y+cell_Height<=frame.rows; y+=cell_Height){
+    		if(y+cell_Height+cell_Height>frame.rows){
+    			cell_Height = frame.rows-y;
+    		}
     		frameSections[a] = frame(Rect(x, y, cell_Width, cell_Height));
     		a++;
     	}
@@ -281,6 +340,8 @@ void density_est(int& num_threads){
     }
     cap.release();
     cout << allFrames.size()<<endl;
+    global_queue.resize(num_threads,vector<float>());
+    global_dynamic.resize(num_threads,vector<float>());
     // Initialising threads
     pthread_t threads[num_threads];
 	void *status;
@@ -312,31 +373,57 @@ void density_est(int& num_threads){
   	}
 	
 	time(&end);
-	float q = 0;
-	float d = 0;
-	for(int i=0;i<num_threads;i++){
-		q+= global_queue[i];
-		d+= global_dynamic[i];
+	for(int i=1;i<num_threads;i++){
+		for(int j=0;j<allFrames.size();j++){
+			global_queue[0][j]+=global_queue[i][j];
+			global_dynamic[0][j]+=global_dynamic[i][j];
+		}
 	}
-	q = q / (float) num_threads;
-	d = d / (float) num_threads;
-	float squared_error_queue = (q - baseline_q)*(q - baseline_q);
-	float squared_error_dynamic = (d - baseline_d)*(d - baseline_d);
-	cout<<"Average queue_density ="<<q<<endl;
-	cout<<"Average dynamic_density ="<<d<<endl;
-	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
-	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
+	// float q = 0;
+	// float d = 0;
+	// for(int i=0;i<num_threads;i++){
+	// 	q+= global_queue[i];
+	// 	d+= global_dynamic[i];
+	// }
+	// q = q / (float) num_threads;
+	// d = d / (float) num_threads;
+	// float squared_error_queue = (q - baseline_q)*(q - baseline_q);
+	// float squared_error_dynamic = (d - baseline_d)*(d - baseline_d);
+	// cout<<"Average queue_density ="<<q<<endl;
+	// cout<<"Average dynamic_density ="<<d<<endl;
+	// cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
+	// cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
+    
+    ofstream fout;
+    fout.open("runtime_method3.csv",ios::app);
+    fout<<num_threads<<","<<time_taken<<"\n";
+    fout.close();
+    
+    string filename = to_string(num_threads)+"_out_method3.csv";
+    fout.open(filename);
+    for(int i=0;i<allFrames.size();i++){
+    	fout<<i<<","<<global_queue[0][i]<<","<<global_dynamic[0][i]<<"\n";
+    }
+    fout.close();
+    
 }
 
 
 int main( int argc, char** argv)
-{	
-	int num_threads = 8;
+{	init();
+	int num_threads = stoi(argv[1]);
 	density_est(num_threads);
+	double val = getCurrentValue();
+	cout<<"cpu utilisation:"<<val<<endl;
+	ofstream fout;
+	fout.open("cpuUtilisation_method3.csv",ios::app);
+	fout<<num_threads<<","<<val<<"\n";
+	fout.close();
+	
 	return 0;
     
 }

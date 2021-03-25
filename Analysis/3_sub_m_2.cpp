@@ -215,35 +215,42 @@ void density_est(int& x,int& y,ofstream& method2){
 		dynamic_density = estimatedVehicle(movingVehicles);
 		total_dynamic_density+= dynamic_density;
 		
-		// cout<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
+		method2<<frame_count<<","<<queue_density<<","<<dynamic_density<<"\n";
 		
 		prevFrame = processedFrame;
 	}
 	time(&end);
 
-	float avg_queue_density = total_queue_density / (float) frame_count;
-	float avg_dynamic_density = total_dynamic_density / (float) frame_count;
-	float squared_error_queue = (avg_queue_density - baseline_q)*(avg_queue_density - baseline_q);
-	float squared_error_dynamic = (avg_dynamic_density - baseline_d)*(avg_dynamic_density - baseline_d);
-	cout<<"Average queue_density ="<<avg_queue_density<<endl;
-	cout<<"Average dynamic_density ="<<avg_dynamic_density<<endl;
-	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
-	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
+	// float avg_queue_density = total_queue_density / (float) frame_count;
+	// float avg_dynamic_density = total_dynamic_density / (float) frame_count;
+	// float squared_error_queue = (avg_queue_density - baseline_q)*(avg_queue_density - baseline_q);
+	// float squared_error_dynamic = (avg_dynamic_density - baseline_d)*(avg_dynamic_density - baseline_d);
+	// cout<<"Average queue_density ="<<avg_queue_density<<endl;
+	// cout<<"Average dynamic_density ="<<avg_dynamic_density<<endl;
+	// cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
+	// cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
 
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
-    method2<<x<<","<<y<<","<<squared_error_queue<<","<<squared_error_dynamic<<","<<time_taken<<"\n";
+    //method2<<x<<","<<y<<","<<squared_error_queue<<","<<squared_error_dynamic<<","<<time_taken<<"\n";
 	cap.release();
+	temp.release();
+	
+	ofstream fout;
+	fout.open("runtime_method2.csv",ios::app);
+	fout<<x<<","<<y<<","<<time_taken<<"\n";
+	fout.close();
 }
 
 int main( int argc, char** argv)
 {	
 	ofstream method2;
-	method2.open ("method2.txt");
-	int x=300;
-	int y=300;
+	int x=stoi(argv[1]);
+	int y=stoi(argv[2]);
+	string filename = to_string(x)+"x"+to_string(y)+"_out_method2.csv";
+	method2.open (filename);
 	density_est(x,y,method2);
 	// x = 3;
 	// density_est(x,method1);

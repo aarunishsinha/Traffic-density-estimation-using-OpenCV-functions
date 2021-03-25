@@ -55,4 +55,5 @@ The output will appear on the terminal window. First line of output is ```time(i
 #### Runtimes for different number of threads used.
 | num_threads | Runtime |
 |-------------|---------|
-| 1 | 111.000000 secs |
+| 1 | 211.000000 secs |
+| 4 | 163.000000 secs |

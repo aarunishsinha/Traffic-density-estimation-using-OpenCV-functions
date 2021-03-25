@@ -10,6 +10,8 @@ method5:
 		g++ 3_sub_m_5.cpp -o 5_method -pthread -std=c++11 `pkg-config --cflags --libs opencv4`
 method6:
 		g++ 3_sub_m_6.cpp -o 6_method -pthread -std=c++11 `pkg-config --cflags --libs opencv4`
+method7:
+		g++ 3_sub_m_7.cpp -o 7_method -pthread -std=c++11 `pkg-config --cflags --libs opencv4`
 clean1:
 		rm ./1_method
 		rm out_method1.csv
@@ -25,3 +27,5 @@ clean5:
 		rm ./5_method
 clean6:
 		rm ./6_method
+clean7:
+		rm ./7_method

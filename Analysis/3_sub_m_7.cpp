@@ -19,9 +19,9 @@ struct thread_data{
 
 vector<float> global_queue(MaxFrames);
 vector<float> global_dynamic(MaxFrames);
+int TotalFrames;
+pthread_mutex_t lock1;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
-int frame_count=0;
-vector<Mat> allFrames;
 
 // Get Screen resolution of device being used
 /*void getScreenResolution(){               // UNCOMMENT TO RESIZE WINDOW 
@@ -174,6 +174,22 @@ void *forkfunc(void *threadarg){
 	int num_threads = my_data->total_threads;
 	int thread_num = my_data->thread_id;
 	
+	// cout<<"start "<<thread_num<<"\n"; 
+	
+	VideoCapture cap("../trafficvideo.mp4");
+	if(!cap.isOpened()){
+		cout<<"Error opening video file \n";
+	}
+	int total_frame = cap.get(7);
+	int start_frame = (total_frame/num_threads)*thread_num + min(total_frame%num_threads,thread_num);
+	int end_frame = start_frame + (total_frame/num_threads) + (total_frame%num_threads>thread_num?1:0);
+	// start_frame += 3-(start_frame%3!=0?start_frame%3:3); //for processing every third frame
+	// in case number of frames less than number of threads :(
+	if(start_frame>=total_frame){
+		cap.release();
+		pthread_exit(NULL);		
+	}
+	
 	// Frame 1995(TS-> 2:13) set as background image.
 	VideoCapture temp("../trafficvideo.mp4");
 	temp.set(1,1995);
@@ -181,41 +197,54 @@ void *forkfunc(void *threadarg){
 	temp>>bgimg;
 	bgimg = cropFrame(bgimg);
 
-	//Iterator
-	int iter = thread_num;
-
     Mat prevFrame;
-    Mat frame;
-    prevFrame = bgimg;
+    if(thread_num==0){
+    	cap.set(1,start_frame);
+    	prevFrame = bgimg.clone();
+    	TotalFrames = total_frame;
+    }
+    else{
+    	cap.set(1,start_frame-1); // -3, for procesing every third frame
+    	cap>>prevFrame;
+    	prevFrame = cropFrame(prevFrame);
+    }
+
     // cout <<thread_num<< " BG done"<<endl;
 
     float queue_density = 0.0;
     float dynamic_density = 0.0;
+    int frame_count = start_frame;
     
     // cout <<thread_num<<" Entering Loop"<<endl;
 
-    while(iter<frame_count){
-    	if(iter>0){
-    		prevFrame = allFrames[iter-1];
-    		Mat process = cropFrame(prevFrame);
-    		prevFrame = process.clone();
-    	}
-    	frame = allFrames[iter];
+    while((!prevFrame.empty()) && frame_count<end_frame){
+    	Mat frame;
+    	cap>>frame;
+    	// video ends
+		if(frame.empty()){
+			break;
+		}
     	Mat processedFrame = cropFrame(frame);
     	frame = processedFrame.clone();
 
-    	// cout<<thread_num<< " Frame done: " << iter<<endl;
+    	// cout<<thread_num<< " Frame done: " << frame_count<<endl;
 
     	Mat allVehicles = diffStatic(frame,bgimg);
     	queue_density = estimatedVehicle(allVehicles);
-		global_queue[iter] = queue_density;
+		global_queue[frame_count] = queue_density;
 		
     	Mat movingVehicles = diffMoving(frame,prevFrame);
     	dynamic_density = estimatedVehicle(movingVehicles);
-		global_dynamic[iter] = dynamic_density;
+		global_dynamic[frame_count] = dynamic_density;
+		
+    	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
 
-    	iter += num_threads;
+    	prevFrame = frame;
+    	frame_count++;
     }
+
+    // cout << thread_num<< " Stored in vector"<<endl;
+    cap.release();
     pthread_exit(NULL);
 }
 
@@ -225,22 +254,6 @@ void density_est(int& num_threads){
 	time_t start, end;
 	time(&start);
 	void *status;
-
-	VideoCapture cap("../trafficvideo.mp4");
-	if(!cap.isOpened()){
-		cout<<"Error opening video file \n";
-	}
-	while(1){
-    	Mat frame;
-    	cap>>frame;
-    	// video ends
-		if(frame.empty()){
-			break;
-		}
-		frame_count++;
-		allFrames.push_back(frame);
-	}
-	cap.release();
 
 	struct thread_data td[num_threads];
 
@@ -275,10 +288,9 @@ void density_est(int& num_threads){
     cout << " secs " << endl;
 	
 	ofstream fout;
-	string filename = to_string(num_threads)+"_out_method4.csv";
-	fout.open(filename);
-	for(int i=0;i<frame_count;i++){			// i+=3 , when processing every third frame.
-		fout<<(i+1)<<","<<global_queue[i]<<","<<global_dynamic[i]<<"\n";
+	fout.open("out_method_4.txt");
+	for(int i=0;i<TotalFrames;i++){			// i+=3 , when processing every third frame.
+		fout<<i<<","<<global_queue[i]<<","<<global_dynamic[i]<<"\n";
 	}
 	fout.close();
 }
@@ -288,8 +300,8 @@ int main( int argc, char** argv)
 {	
 	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
     // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
-    char *p;
-	int num_threads = strtol(argv[1],&p,10);
+    
+	int num_threads = 4;
 	density_est(num_threads);
 	return 0;
     

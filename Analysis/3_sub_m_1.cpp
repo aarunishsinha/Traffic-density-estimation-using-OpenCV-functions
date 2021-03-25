@@ -237,6 +237,7 @@ void density_est(int& x,ofstream& method1){
     cout << " secs " << endl;
     // method1<<x<<","<<squared_error_queue<<","<<squared_error_dynamic<<","<<time_taken<<"\n";
 	cap.release();
+	temp.release();
 	
 	ofstream fout;
 	fout.open("runtime_method1.csv",ios::app);

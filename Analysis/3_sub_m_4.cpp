@@ -197,12 +197,11 @@ void *forkfunc(void *threadarg){
     while(iter<frame_count){
     	if(iter>0){
     		prevFrame = allFrames[iter-1];
-    		Mat process = cropFrame(prevFrame);
-    		prevFrame = process.clone();
+    		// Mat process = cropFrame(prevFrame);
+    		// prevFrame = process.clone();
     	}
     	frame = allFrames[iter];
-    	Mat processedFrame = cropFrame(frame);
-    	frame = processedFrame.clone();
+    	// Mat processedFrame = cropFrame(frame);
 
     	// cout<<thread_num<< " Frame done: " << iter<<endl;
 
@@ -215,6 +214,7 @@ void *forkfunc(void *threadarg){
 		global_dynamic[iter] = dynamic_density;
 
     	iter += num_threads;
+    	// prevFrame = processedFrame;
     }
     pthread_exit(NULL);
 }
@@ -238,7 +238,8 @@ void density_est(int& num_threads){
 			break;
 		}
 		frame_count++;
-		allFrames.push_back(frame);
+		Mat processedFrame = cropFrame(frame);
+		allFrames.push_back(processedFrame);
 	}
 	cap.release();
 

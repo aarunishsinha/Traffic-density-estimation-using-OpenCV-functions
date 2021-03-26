@@ -39,17 +39,46 @@ def main():
 	plt.ylabel("Avgerage squared error")
 	plt.plot(x,q,label="Queue Density error",marker='o')
 	plt.plot(x,d,label="Dynamic Density error",marker='o')
+	#for i in range(len(x)):
+	#	plt.annotate("("+str(x[i])+","+str(q[i])+")",(x[i],q[i]));
+	#	plt.annotate("("+str(x[i])+","+str(d[i])+")",(x[i],d[i]));
 	plt.legend()
 	plt.grid()
 	plt.savefig("plot1.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(x)):
+		cell_text.append([x[i],q[i],d[i]])
+	table=plt.table(cellText=cell_text,colLabels=['Frames skipped','Queue Density Error','Dynamic Density Error'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	plt.savefig("table1.png",dpi=200)
 	plt.show()
 	
 	plt.figure()
 	plt.xlabel("Number of frames skipped")
 	plt.ylabel("Runtime(seconds)")
 	plt.plot(x,t,marker='o')
+	#for i in range(len(x)):
+	#	plt.annotate("("+str(x[i])+","+str(t[i])+")",(x[i],t[i]));
 	plt.grid()
 	plt.savefig("plot2.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(x)):
+		cell_text.append([x[i],t[i]])
+	table=plt.table(cellText=cell_text,colLabels=['Number of frames skipped','Runtime(seconds)'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	plt.savefig("table2.png",dpi=200)
 	plt.show()
 	
 	out_file1 = str(1) + "_out_method1.csv"
@@ -82,9 +111,24 @@ def main():
 	plt.ylabel("Utility Percentage")
 	plt.plot(x,q,label="Queue Density utility percentage",marker='o')
 	plt.plot(x,d,label="Dynamic Density utility percentage",marker='o')
+	#for i in range(len(x)):
+	#	plt.annotate("("+str(x[i])+","+str(q[i])+")",(x[i],q[i]));
+	#	plt.annotate("("+str(x[i])+","+str(d[i])+")",(x[i],d[i]));
 	plt.legend()
 	plt.grid()
 	plt.savefig("plot4.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(x)):
+		cell_text.append([x[i],q[i],d[i]])
+	table=plt.table(cellText=cell_text,colLabels=['Number of frames skipped','Queue Density Utility(%)','Dynamic Density Utility(%)'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	plt.savefig("table4.png",dpi=200)
 	plt.show()
 	
 	plt.figure()
@@ -92,9 +136,24 @@ def main():
 	plt.ylabel("Utility Percentage")
 	plt.plot(t,q,label="Queue Density utility percentage",marker='o')
 	plt.plot(t,d,label="Dynamic Density utility percentage",marker='o')
+	#for i in range(len(x)):
+	#	plt.annotate("("+str(t[i])+","+str(q[i])+")",(t[i],q[i]));
+	#	plt.annotate("("+str(t[i])+","+str(d[i])+")",(t[i],d[i]));
 	plt.legend()
 	plt.grid()
 	plt.savefig("plot5.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(x)):
+		cell_text.append([t[i],q[i],d[i]])
+	table = plt.table(cellText=cell_text,colLabels=['Runtime(sec)','Queue Density Utility(%)','Dynamic Density Utility(%)'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	plt.savefig("table5.png",dpi=200)
 	plt.show()
 	
 

@@ -36,20 +36,22 @@ def main():
 	plt.figure()
 	plt.xlabel("Runtime(seconds)")
 	plt.ylabel("Avgerage squared error")
-	plt.plot(t,q,label="Queue Density error")
+	plt.plot(t,q,label="Queue Density error",marker='o')
 	plt.legend()
 	for i in range(len(t)):
 		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],q[i]));
+	plt.grid()
 	plt.savefig("plot1.png",dpi=200)
 	plt.show()
 	
 	plt.figure()
 	plt.xlabel("Runtime(seconds)")
 	plt.ylabel("Avgerage squared error")
-	plt.plot(t,d,label="Dynamic Density error")
+	plt.plot(t,d,label="Dynamic Density error",marker='o')
 	plt.legend()
 	for i in range(len(t)):
 		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],d[i]));
+	plt.grid()
 	plt.savefig("plot2.png",dpi=200)
 	plt.show()
 	
@@ -59,20 +61,22 @@ def main():
 	plt.figure()
 	plt.xlabel("Runtime(seconds)")
 	plt.ylabel("Avgerage squared error")
-	plt.plot(t,q,label="Queue Density error")
+	plt.plot(t,q,label="Queue Density error",marker='o')
 	plt.legend()
 	for i in range(len(t)):
 		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],q[i]));
+	plt.grid()
 	plt.savefig("plot3.png",dpi=200)
 	plt.show()
 	
 	plt.figure()
 	plt.xlabel("Runtime(seconds)")
 	plt.ylabel("Avgerage squared error")
-	plt.plot(t,d,label="Dynamic Density error")
+	plt.plot(t,d,label="Dynamic Density error",marker='o')
 	plt.legend()
 	for i in range(len(t)):
 		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],d[i]));
+	plt.grid()
 	plt.savefig("plot4.png",dpi=200)
 	plt.show()
 	

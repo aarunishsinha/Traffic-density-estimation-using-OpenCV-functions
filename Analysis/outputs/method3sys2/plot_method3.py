@@ -41,6 +41,7 @@ def main():
 	plt.plot(th,q,label="Queue Density error",marker='o')
 	plt.plot(th,d,label="Dynamic Density error",marker='o')
 	plt.legend()
+	plt.grid()
 	plt.savefig("plot1.png",dpi=200)
 	plt.show()
 	
@@ -54,6 +55,7 @@ def main():
 	lns=ln1+ln2
 	labs=[l.get_label() for l in lns]
 	ax.legend(lns,labs,loc=5)
+	plt.grid()
 	plt.savefig("plot2.png",dpi=200)
 	plt.show()
 	
@@ -65,6 +67,7 @@ def main():
 	plt.plot(th,q,label="Queue Density utility percentage",marker='o')
 	plt.plot(th,d,label="Dynamic Density utility percentage",marker='o')
 	plt.legend()
+	plt.grid()
 	plt.savefig("plot3.png",dpi=200)
 	plt.show()
 	
@@ -74,6 +77,7 @@ def main():
 	plt.plot(ti,q,label="Queue Density utility percentage",marker='o')
 	plt.plot(ti,d,label="Dynamic Density utility percentage",marker='o')
 	plt.legend()
+	plt.grid()
 	plt.savefig("plot4.png",dpi=200)
 	plt.show()
 	

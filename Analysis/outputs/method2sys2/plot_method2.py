@@ -39,7 +39,7 @@ def main():
 	plt.plot(t,q,label="Queue Density error",marker='o')
 	plt.legend()
 	for i in range(len(t)):
-		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],q[i]));
+		plt.annotate("("+str(runtime[i][0])+"x"+str(runtime[i][1])+")",(t[i],q[i]));
 	plt.grid()
 	plt.savefig("plot1.png",dpi=200)
 	plt.show()
@@ -50,9 +50,23 @@ def main():
 	plt.plot(t,d,label="Dynamic Density error",marker='o')
 	plt.legend()
 	for i in range(len(t)):
-		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],d[i]));
+		plt.annotate("("+str(runtime[i][0])+"x"+str(runtime[i][1])+")",(t[i],d[i]));
 	plt.grid()
 	plt.savefig("plot2.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(t)):
+		cell_text.append([str(runtime[i][0])+" x "+str(runtime[i][1]),t[i],q[i],d[i]])
+	table=plt.table(cellText=cell_text,colLabels=['Resolution','Runtime(sec)','Queue Density Error','Dynamic Density Error'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	fig=plt.gcf();
+	fig.set_size_inches(10,7)
+	plt.savefig("table1.png",dpi=200)
 	plt.show()
 	
 	q = list(map(lambda x:100.0/(1.0+x),q))
@@ -60,24 +74,38 @@ def main():
 	
 	plt.figure()
 	plt.xlabel("Runtime(seconds)")
-	plt.ylabel("Avgerage squared error")
-	plt.plot(t,q,label="Queue Density error",marker='o')
+	plt.ylabel("Utility Percentage")
+	plt.plot(t,q,label="Queue Density utility percentage",marker='o')
 	plt.legend()
 	for i in range(len(t)):
-		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],q[i]));
+		plt.annotate("("+str(runtime[i][0])+"x"+str(runtime[i][1])+")",(t[i],q[i]));
 	plt.grid()
 	plt.savefig("plot3.png",dpi=200)
 	plt.show()
 	
 	plt.figure()
 	plt.xlabel("Runtime(seconds)")
-	plt.ylabel("Avgerage squared error")
-	plt.plot(t,d,label="Dynamic Density error",marker='o')
+	plt.ylabel("Utility percentage")
+	plt.plot(t,d,label="Dynamic Density utility percentage",marker='o')
 	plt.legend()
 	for i in range(len(t)):
-		plt.annotate("("+str(runtime[i][0])+","+str(runtime[i][1])+")",(t[i],d[i]));
+		plt.annotate("("+str(runtime[i][0])+"x"+str(runtime[i][1])+")",(t[i],d[i]));
 	plt.grid()
 	plt.savefig("plot4.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(t)):
+		cell_text.append([str(runtime[i][0])+" x "+str(runtime[i][1]),t[i],q[i],d[i]])
+	table = plt.table(cellText=cell_text,colLabels=['Resolution','Runtime(sec)','Queue Density Utility(%)','Dynamic Density Utility(%)'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	fig=plt.gcf();
+	fig.set_size_inches(10,7)
+	plt.savefig("table2.png",dpi=200)
 	plt.show()
 	
 

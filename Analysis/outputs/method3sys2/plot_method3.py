@@ -59,10 +59,25 @@ def main():
 	plt.savefig("plot2.png",dpi=200)
 	plt.show()
 	
+	cell_text=[]
+	for i in range(len(th)):
+		cell_text.append([th[i],ti[i],cp[i],q[i],d[i]])
+	table=plt.table(cellText=cell_text,colLabels=['Number of threads','Runtime(s)','CPU Utilisation(%)','Queue Density Error','Dynamic Density Error'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	fig=plt.gcf();
+	fig.set_size_inches(11,7)
+	plt.savefig("table1.png",dpi=200)
+	plt.show()
+	
+	
 	q = list(map(lambda x:100.0/(1.0+x),q))
 	d = list(map(lambda x:100.0/(1.0+x),d))
 	plt.figure()
-	plt.xlabel("Number of threads skipped")
+	plt.xlabel("Number of threads")
 	plt.ylabel("Utility Percentage")
 	plt.plot(th,q,label="Queue Density utility percentage",marker='o')
 	plt.plot(th,d,label="Dynamic Density utility percentage",marker='o')
@@ -79,6 +94,20 @@ def main():
 	plt.legend()
 	plt.grid()
 	plt.savefig("plot4.png",dpi=200)
+	plt.show()
+	
+	cell_text=[]
+	for i in range(len(th)):
+		cell_text.append([th[i],ti[i],q[i],d[i]])
+	table = plt.table(cellText=cell_text,colLabels=['Number of threads','Runtime(sec)','Queue Density Utility(%)','Dynamic Density Utility(%)'],loc='center')
+	ax=plt.gca()
+	ax.get_xaxis().set_visible(False)
+	ax.get_yaxis().set_visible(False)
+	plt.box(on=None)
+	table.scale(1,1.5)
+	fig=plt.gcf();
+	fig.set_size_inches(10,7)
+	plt.savefig("table2.png",dpi=200)
 	plt.show()
 	
 

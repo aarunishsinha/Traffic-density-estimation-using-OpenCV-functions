@@ -274,8 +274,12 @@ void density_est(int& num_threads){
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
+
+    ofstream fout;
+    fout.open("runtime_method4.csv",ios::app);
+    fout<<num_threads<<","<<time_taken<<"\n";
+    fout.close();
 	
-	ofstream fout;
 	string filename = to_string(num_threads)+"_out_method4.csv";
 	fout.open(filename);
 	for(int i=0;i<frame_count;i++){			// i+=3 , when processing every third frame.

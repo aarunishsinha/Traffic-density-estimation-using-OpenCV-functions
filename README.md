@@ -50,10 +50,3 @@ The output will appear on the terminal window. First line of output is ```time(i
 | 15 | 21.000000 secs |
 | 18 | 19.000000 secs |
 | 21 | 20.000000 secs |
-
-### Method4:
-#### Runtimes for different number of threads used.
-| num_threads | Runtime |
-|-------------|---------|
-| 1 | 211.000000 secs |
-| 4 | 163.000000 secs |

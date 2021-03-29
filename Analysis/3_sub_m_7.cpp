@@ -1,3 +1,9 @@
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+#include "sys/times.h"
+#include "sys/vtimes.h"
+
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -11,6 +17,54 @@
 
 using namespace cv;
 using namespace std;
+
+
+static clock_t lastCPU, lastSysCPU, lastUserCPU;
+static int numProcessors;
+
+void init(){
+    FILE* file;
+    struct tms timeSample;
+    char line[128];
+
+    lastCPU = times(&timeSample);
+    lastSysCPU = timeSample.tms_stime;
+    lastUserCPU = timeSample.tms_utime;
+
+    file = fopen("/proc/cpuinfo", "r");
+    numProcessors = 0;
+    while(fgets(line, 128, file) != NULL){
+        if (strncmp(line, "processor", 9) == 0) numProcessors++;
+    }
+    fclose(file);
+}
+
+double getCurrentValue(){
+    struct tms timeSample;
+    clock_t now;
+    double percent;
+
+    now = times(&timeSample);
+    if (now <= lastCPU || timeSample.tms_stime < lastSysCPU ||
+        timeSample.tms_utime < lastUserCPU){
+        //Overflow detection. Just skip this value.
+        percent = -1.0;
+    }
+    else{
+        percent = (timeSample.tms_stime - lastSysCPU) +
+            (timeSample.tms_utime - lastUserCPU);
+        percent /= (now - lastCPU);
+        percent /= numProcessors;
+        percent *= 100;
+    }
+    lastCPU = now;
+    lastSysCPU = timeSample.tms_stime;
+    lastUserCPU = timeSample.tms_utime;
+
+    return percent;
+}
+
+
 
 struct thread_data{
 	int total_threads;
@@ -183,28 +237,32 @@ void *forkfunc(void *threadarg){
 	int total_frame = cap.get(7);
 	int start_frame = (total_frame/num_threads)*thread_num + min(total_frame%num_threads,thread_num);
 	int end_frame = start_frame + (total_frame/num_threads) + (total_frame%num_threads>thread_num?1:0);
-	// start_frame += 3-(start_frame%3!=0?start_frame%3:3); //for processing every third frame
 	// in case number of frames less than number of threads :(
 	if(start_frame>=total_frame){
 		cap.release();
 		pthread_exit(NULL);		
 	}
-	
+	// cout<<"start: "<<start_frame<<endl;
+	// cout<<"end: "<<end_frame<<endl;
 	// Frame 1995(TS-> 2:13) set as background image.
 	VideoCapture temp("../trafficvideo.mp4");
 	temp.set(1,1995);
 	Mat bgimg;
 	temp>>bgimg;
+	temp.release();
 	bgimg = cropFrame(bgimg);
 
     Mat prevFrame;
     if(thread_num==0){
-    	cap.set(1,start_frame);
+    	//cap.set(1,start_frame);
     	prevFrame = bgimg.clone();
     	TotalFrames = total_frame;
     }
     else{
-    	cap.set(1,start_frame-1); // -3, for procesing every third frame
+    	//cap.set(1,start_frame-1);
+    	float fps = cap.get(5);
+    	int tval = ((float)(start_frame-1)/fps)*100; 
+    	cap.set(0,tval);
     	cap>>prevFrame;
     	prevFrame = cropFrame(prevFrame);
     }
@@ -217,7 +275,7 @@ void *forkfunc(void *threadarg){
     
     // cout <<thread_num<<" Entering Loop"<<endl;
 
-    while((!prevFrame.empty()) && frame_count<end_frame){
+    while(frame_count<end_frame){
     	Mat frame;
     	cap>>frame;
     	// video ends
@@ -288,21 +346,38 @@ void density_est(int& num_threads){
     cout << " secs " << endl;
 	
 	ofstream fout;
-	fout.open("out_method_4.txt");
-	for(int i=0;i<TotalFrames;i++){			// i+=3 , when processing every third frame.
+	string filePath = to_string(num_threads)+"_out_method7.csv";
+	fout.open(filePath);
+	for(int i=0;i<TotalFrames;i++){ 
 		fout<<i<<","<<global_queue[i]<<","<<global_dynamic[i]<<"\n";
 	}
+	fout.close();
+	
+	fout.open("runtime_method7.csv",ios::app);
+	fout<<num_threads<<","<<time_taken<<"\n";
 	fout.close();
 }
 
 
 int main( int argc, char** argv)
 {	
-	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
-    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
-    
-	int num_threads = 4;
+	init();
+	int num_threads = stoi(argv[1]);
 	density_est(num_threads);
+	double val = getCurrentValue();
+	cout<<"cpu utilisation:"<<val<<endl;
+	ofstream fout;
+	fout.open("cpuUtilisation_method7.csv",ios::app);
+	fout<<num_threads<<","<<val<<"\n";
+	fout.close();
+	
 	return 0;
     
 }
+
+
+
+
+
+
+

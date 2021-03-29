@@ -254,15 +254,12 @@ void *forkfunc(void *threadarg){
 
     Mat prevFrame;
     if(thread_num==0){
-    	//cap.set(1,start_frame);
+    	cap.set(1,start_frame);
     	prevFrame = bgimg.clone();
     	TotalFrames = total_frame;
     }
     else{
-    	//cap.set(1,start_frame-1);
-    	float fps = cap.get(5);
-    	int tval = ((float)(start_frame-1)/fps)*100; 
-    	cap.set(0,tval);
+    	cap.set(1,start_frame-1);
     	cap>>prevFrame;
     	prevFrame = cropFrame(prevFrame);
     }

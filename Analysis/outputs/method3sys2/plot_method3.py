@@ -83,6 +83,8 @@ def main():
 	plt.plot(th,d,label="Dynamic Density utility percentage",marker='o')
 	plt.legend()
 	plt.grid()
+	fig=plt.gcf();
+	fig.set_size_inches(8,6)
 	plt.savefig("plot3.png",dpi=200)
 	plt.show()
 	
@@ -93,6 +95,8 @@ def main():
 	plt.plot(ti,d,label="Dynamic Density utility percentage",marker='o')
 	plt.legend()
 	plt.grid()
+	fig=plt.gcf();
+	fig.set_size_inches(8,6)
 	plt.savefig("plot4.png",dpi=200)
 	plt.show()
 	

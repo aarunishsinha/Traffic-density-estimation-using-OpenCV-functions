@@ -18,9 +18,8 @@ struct thread_data{
 	int thread_id;
 };
 
-vector<float> global_queue;
-vector<float> global_dynamic;
-pthread_mutex_t lock1;
+vector<vector<float>> global_queue;
+vector<vector<float>> global_dynamic;
 int SCREEN_WIDTH,SCREEN_HEIGHT;
 
 // Get Screen resolution of device being used
@@ -196,6 +195,9 @@ void *forkfunc(void *threadarg){
 
     for(y=0; y+cell_Height<=bgimg.rows; y+=cell_Height)
     {   
+    	if(y+cell_Height+cell_Height>bgimg.rows){
+    		cell_Height = bgimg.rows-y;
+    	}
         bgimgSections[a] = bgimg(Rect(x, y, cell_Width, cell_Height));
         a++;
     }
@@ -229,6 +231,9 @@ void *forkfunc(void *threadarg){
     	int y = 0;
     	int a = 0;
     	for(y=0; y+cell_Height<=frame.rows; y+=cell_Height){
+    		if(y+cell_Height+cell_Height>frame.rows){
+    			cell_Height = frame.rows-y;
+    		}
     		frameSections[a] = frame(Rect(x, y, cell_Width, cell_Height));
     		a++;
     	}
@@ -238,24 +243,18 @@ void *forkfunc(void *threadarg){
 
     	Mat allVehicles = diffStatic(frame,bgimg);
     	queue_density = estimatedVehicle(allVehicles);
-    	total_queue_density_in_split += queue_density;
+    	global_queue[thread_num].push_back(queue_density);
 
     	Mat movingVehicles = diffMoving(frame,prevFrame);
     	dynamic_density = estimatedVehicle(movingVehicles);
-    	total_dynamic_density_in_split += dynamic_density;
+    	global_dynamic[thread_num].push_back(dynamic_density);
 
     	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
 
     	prevFrame = frame;
     }
-    float avg_queue = total_queue_density_in_split / (float) frame_count;
-    float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
+    
     // cout<<thread_num<< " AVG calculated"<<endl;
-
-    pthread_mutex_lock(&lock1);
-    global_queue.push_back(avg_queue); // ERRORRRRRRRRRR
-    global_dynamic.push_back(avg_dynamic);
-    pthread_mutex_unlock(&lock1);
 
     // cout << thread_num<< " Stored in vector"<<endl;
     cap.release();
@@ -269,7 +268,9 @@ void density_est(int& num_threads){
 	void *status;
 
 	struct thread_data td[num_threads];
-
+	global_queue.resize(num_threads,vector<float>());
+    global_dynamic.resize(num_threads,vector<float>());
+    
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -294,31 +295,43 @@ void density_est(int& num_threads){
   		cout << "Main: completed thread id :" << i <<endl;
   	}
 	
-	time(&end);
-	float q = 0;
-	float d = 0;
-	for(int i=0;i<num_threads;i++){
-		q+= global_queue[i];
-		d+= global_dynamic[i];
+	for(int j=0;j<global_queue[0].size();j++){
+		for(int i=1;i<num_threads;i++){
+			global_queue[0][j]+=global_queue[i][j];
+			global_dynamic[0][j]+=global_dynamic[i][j];
+		}
+		global_queue[0][j]/=num_threads;
+		global_dynamic[0][j]/=num_threads;
 	}
-	q = q / (float) num_threads;
-	d = d / (float) num_threads;
-	float squared_error_queue = (q - baseline_q)*(q - baseline_q);
-	float squared_error_dynamic = (d - baseline_d)*(d - baseline_d);
-	cout<<"Average queue_density ="<<q<<endl;
-	cout<<"Average dynamic_density ="<<d<<endl;
-	cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
-	cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
+	
+	time(&end);
+	
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 
     cout << " secs " << endl;
+    
+    ofstream fout;
+    fout.open("runtime_method5.csv",ios::app);
+    fout<<num_threads<<","<<time_taken<<"\n";
+    fout.close();
+    
+    string filename = to_string(num_threads)+"_out_method5.csv";
+    fout.open(filename);
+    for(int i=0;i<global_queue[0].size();i++){
+    	fout<<i<<","<<global_queue[0][i]<<","<<global_dynamic[0][i]<<"\n";
+    }
+    fout.close();
 }
 
 
 int main( int argc, char** argv)
 {	
-	int num_threads = 4;
+	// Initialize SCREEN_WIDTH and SCREEN_HEIGHT
+    // getScreenResolution();                       // UNCOMMENT TO RESIZE WINDOW
+   	
+   	char *p;
+	int num_threads = strtol(argv[1],&p,10);
 	density_est(num_threads);
 	return 0;
     

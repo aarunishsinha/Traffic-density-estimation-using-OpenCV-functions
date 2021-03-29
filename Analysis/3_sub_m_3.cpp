@@ -361,7 +361,6 @@ void density_est(int& num_threads){
   		cout << "Main: completed thread id :" << i <<endl;
   	}
 	
-	time(&end);
 	for(int j=0;j<allFrames.size();j++){
 		for(int i=1;i<num_threads;i++){
 			global_queue[0][j]+=global_queue[i][j];
@@ -370,6 +369,8 @@ void density_est(int& num_threads){
 		global_queue[0][j]/=4.0;
 		global_dynamic[0][j]/=4.0;
 	}
+	
+	time(&end);
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 

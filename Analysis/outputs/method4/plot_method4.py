@@ -12,7 +12,7 @@ def main():
 	runtime = np.array(pd.read_csv(runtime_file,header=None))
 	cpu = np.array(pd.read_csv(cpu_file,header=None))
 	for i in range(len(cpu)):
-		th.append(i)
+		th.append(i+1)
 		ti.append(runtime[i][1])
 		cp.append(cpu[i][1])
 	

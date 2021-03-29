@@ -283,27 +283,16 @@ void *forkfunc(void *threadarg){
     	Mat allVehicles = diffStatic(frame,bgimg);
     	queue_density = estimatedVehicle(allVehicles);
     	global_queue[thread_num].push_back(queue_density);
-    	//total_queue_density_in_split += queue_density;
 
     	Mat movingVehicles = diffMoving(frame,prevFrame);
     	dynamic_density = estimatedVehicle(movingVehicles);
     	global_dynamic[thread_num].push_back(dynamic_density);
-    	//total_dynamic_density_in_split += dynamic_density;
 
     	// cout<<thread_num<< " Densities calculated: " << frame_count<<endl;
 
     	prevFrame = frame.clone();
     }
-    // float avg_queue = total_queue_density_in_split / (float) frame_count;
-    // float avg_dynamic = total_dynamic_density_in_split / (float) frame_count;
-    // cout<<thread_num<< " AVG calculated"<<endl;
-
-    // pthread_mutex_lock(&lock1);
-    // global_queue.push_back(avg_queue);
-    // global_dynamic.push_back(avg_dynamic);
-    // pthread_mutex_unlock(&lock1);
-
-    // cout << thread_num<< " Stored in vector"<<endl;
+    
     pthread_exit(NULL);
 }
 void density_est(int& num_threads){
@@ -373,26 +362,14 @@ void density_est(int& num_threads){
   	}
 	
 	time(&end);
-	for(int i=1;i<num_threads;i++){
-		for(int j=0;j<allFrames.size();j++){
+	for(int j=0;j<allFrames.size();j++){
+		for(int i=1;i<num_threads;i++){
 			global_queue[0][j]+=global_queue[i][j];
 			global_dynamic[0][j]+=global_dynamic[i][j];
 		}
+		global_queue[0][j]/=4.0;
+		global_dynamic[0][j]/=4.0;
 	}
-	// float q = 0;
-	// float d = 0;
-	// for(int i=0;i<num_threads;i++){
-	// 	q+= global_queue[i];
-	// 	d+= global_dynamic[i];
-	// }
-	// q = q / (float) num_threads;
-	// d = d / (float) num_threads;
-	// float squared_error_queue = (q - baseline_q)*(q - baseline_q);
-	// float squared_error_dynamic = (d - baseline_d)*(d - baseline_d);
-	// cout<<"Average queue_density ="<<q<<endl;
-	// cout<<"Average dynamic_density ="<<d<<endl;
-	// cout<<"Squared Error on Queue Density= "<<squared_error_queue<<endl;
-	// cout<<"Squared Error on Dynamic Density= "<<squared_error_dynamic<<endl;
 	double time_taken = double(end - start); 
     cout << "Runtime = " << fixed 
          << time_taken << setprecision(5); 

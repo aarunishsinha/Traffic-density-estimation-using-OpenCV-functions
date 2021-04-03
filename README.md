@@ -10,11 +10,11 @@ COP290 - Design Practices
 
 ### README:
 To Compile:
-```
+```shell
 $ make
 ```
 To Run:
-```
+```shell
 $ ./1_subtask <image_path_name>
 ```
 The image given as input will appear in a window. Select 4 points, starting from top-left, in clockwise fashion and press ```Enter```.\
@@ -47,5 +47,6 @@ In order to run the program properly on a different video give an appropriate ba
 ```
 $ ./2_subtask <video_path_name> <bg_image_path_name>
 ```
-The output will appear on the terminal window. First line of output is ```time(in secs),queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.
+The output will appear on the terminal window. First line of output is ```time(in secs),queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.\
+
 ![alt text](https://github.com/aarunishsinha/Traffic-density-estimation-using-OpenCV-functions/blob/main/Subtask_2/plot.png "Traffic Densities vs Time")

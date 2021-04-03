@@ -79,7 +79,7 @@ Different implementation of method-3.
 ### Method-6
 Split the video into equal chunks of small clips and process each clip on a different thread.
 
-### Directory Structure:
+## Directory Structure:
 ```bash
 ├── Subtask_3
 │   ├── analysis
@@ -105,3 +105,52 @@ Split the video into equal chunks of small clips and process each clip on a diff
 │   │   ├── 3_sub_m_6.cpp
 │   │   └── Makefile
 ```
+## To Compile:
+```shell
+$ make method<method_number>
+```
+For example, to compile method-1:
+```shell
+$ make method1
+```
+
+## To Execute:
+Note: The path to the video is hard coded in each file as ```../trafficvideo.mp4``` so please keep the video in outside the ```code``` directory in the top directory.
+### Method-1
+```shell
+$ ./1_method <x>
+```
+Where ```x``` is as specified in the assignment specifications.
+### Method-2
+```shell
+$ ./2_method <X> <Y>
+```
+where ```X``` and ```Y``` define the new resolution ```XxY```.
+### Method-3
+```shell
+$ ./3_method <NUM_THREADS>
+```
+### Method-4
+```shell
+$ ./4_method <NUM_THREADS>
+```
+### Method-5
+```shell
+$ ./5_method <NUM_THREADS>
+```
+### Method-5
+```shell
+$ ./6_method <NUM_THREADS>
+```
+
+## To Clean:
+```shell
+$ make clean<method_number>
+```
+This will remove the executable of that method from the directory.
+
+## Methods Directory
+Each method directory contains the outputs in ```.csv``` files. One csv file for each parameter and the value of the parameter is incorporated in the name of the ```.csv``` file.\
+The output ```.csv``` files have the columns ```frame_number,queue_density,dynamic_density```, the runtime ```.csv``` has the columns ```parameter,runtime(in seconds)``` and the CPU utilisation ```.csv``` files have the columns ```parameter,CPU utilisation percentage```.\
+There are script files(python files) that we have used for plotting the graphs.\
+In the directory ```method4``` and ```method5``` there are two post-processing scripts (in python) that we have used to find the CPU utilisation on MacOS.

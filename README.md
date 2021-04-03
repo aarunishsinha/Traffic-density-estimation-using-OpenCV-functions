@@ -58,3 +58,30 @@ $ make clean
 The output will appear on the terminal window. First line of output is ```time(in secs),queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.\
 
 ![alt text](https://github.com/aarunishsinha/Traffic-density-estimation-using-OpenCV-functions/blob/main/Subtask_2/plot.png "Traffic Densities vs Time")
+
+## Subtask 3: Understanding and analyzing trade-offs in software design
+## Goals:
+- Try and implement different methods for traffic density estimation.
+- Analyse each method for different parameters 
+- Understand the trade-off in each method
+
+## Methods:
+### Method-1
+Sub-sampling frames -- processing every x frame i.e. process frame `N` and then frame `N+x`, and for all intermediate frames just use the value obtained for N - total processing time will reduce, but utility might decrease as intermediate frames values might differ from baseline. Parameter for this method is x, how many frames you drop.
+### Method-2
+Reduce resolution for each frame. Lower resolution frames might be processed faster, but having higher errors. Parameter can be resolution XxY.
+### Method-3 
+Split work spatially across threads (application level pthreads) by giving each thread part of a frame to process. Parameter can be number of splits i.e. number of threads, if each thread gets one split. You might need to take care of boundary pixels that different threads process for utility.
+### Method-4
+Split work temporally across threads (application level pthreads), by giving consecutive frames to different threads for processing. Parameter can be number of threads.
+### Method-5
+Different implementation of method-3.
+### Method-6
+Split the video into equal chunks of small clips and process each clip on a different thread.
+
+### Directory Structure:
+```
+>Subtask_3
+  >code
+  >analysis
+```

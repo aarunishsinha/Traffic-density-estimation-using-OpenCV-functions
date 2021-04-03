@@ -157,4 +157,4 @@ There are script files(python files) that we have used for plotting the graphs.\
 In the directory ```method4``` and ```method5``` there are two post-processing scripts (in python) that we have used to find the CPU utilisation on MacOS.
 
 ## Analysis:
-See Report.pdf for detailed analysis and plots.
+See [Report.pdf](https://github.com/aarunishsinha/Traffic-density-estimation-using-OpenCV-functions/blob/main/Subtask_3/analysis/Report.pdf) for detailed analysis and plots.

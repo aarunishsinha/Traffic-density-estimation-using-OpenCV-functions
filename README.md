@@ -155,3 +155,6 @@ Each method directory contains the outputs in ```.csv``` files. One csv file for
 The output ```.csv``` files have the columns ```frame_number,queue_density,dynamic_density```, the runtime ```.csv``` has the columns ```parameter,runtime(in seconds)``` and the CPU utilisation ```.csv``` files have the columns ```parameter,CPU utilisation percentage```.\
 There are script files(python files) that we have used for plotting the graphs.\
 In the directory ```method4``` and ```method5``` there are two post-processing scripts (in python) that we have used to find the CPU utilisation on MacOS.
+
+## Analysis:
+See Report.pdf for detailed analysis and plots.

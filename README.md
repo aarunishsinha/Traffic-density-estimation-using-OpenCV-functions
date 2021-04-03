@@ -27,6 +27,7 @@ Press ```Enter``` and another window will appear with the cropped image, which i
 Press ```Enter``` to terminate execution.
 
 ## Subtask 2: Queue and dynamic density estimation from traffic video
+Google Drive link for the [TrafficVideo](https://drive.google.com/drive/folders/12jChFq39G9d_o-8nxqPoAV-DGRaTl9X4?usp=sharing) used for density estimation.
 ### Goals:
 - Take a video input and convert each frame to grayscale.
 - Compute the queue density in each frame using a control (say an image of empty road).

@@ -80,8 +80,8 @@ Different implementation of method-3.
 Split the video into equal chunks of small clips and process each clip on a different thread.
 
 ### Directory Structure:
-```
->Subtask_3
-  >code
-  >analysis
+```bash
+|--Subtask_3
+|   |--code
+|   |--analysis
 ```

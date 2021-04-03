@@ -81,7 +81,27 @@ Split the video into equal chunks of small clips and process each clip on a diff
 
 ### Directory Structure:
 ```bash
-|--Subtask_3
-|   |--code
-|   |--analysis
+├── Subtask_3
+│   ├── analysis
+│   │   ├── method1
+│   │   │   └── ...
+│   │   ├── method2
+│   │   │   └── ...
+│   │   ├── method3
+│   │   │   └── ...
+│   │   ├── method4
+│   │   │   └── ...
+│   │   ├── method5
+│   │   │   └── ...
+│   │   ├── method6
+│   │   │   └── ...
+│   │   └── Report.pdf
+│   └── code
+│   │   ├── 3_sub_m_1.cpp
+│   │   ├── 3_sub_m_2.cpp
+│   │   ├── 3_sub_m_3.cpp
+│   │   ├── 3_sub_m_4.cpp
+│   │   ├── 3_sub_m_5.cpp
+│   │   ├── 3_sub_m_6.cpp
+│   │   └── Makefile
 ```

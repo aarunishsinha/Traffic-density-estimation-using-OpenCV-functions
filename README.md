@@ -17,6 +17,10 @@ To Run:
 ```shell
 $ ./1_subtask <image_path_name>
 ```
+To Clean:
+```shell
+$ make clean
+```
 The image given as input will appear in a window. Select 4 points, starting from top-left, in clockwise fashion and press ```Enter```.\
 A new window will appear with the projected image and it will be stored in the same directory as well.\
 Press ```Enter``` and another window will appear with the cropped image, which is also simultaneously stored in the same directory.\
@@ -36,16 +40,20 @@ Press ```Enter``` to terminate execution.
 - Plotting has been done using Matplotlib.
 ### README:
 To Compile:
-```
+```shell
 $ make
 ```
 To Run:
-```
+```shell
 $ ./2_subtask <video_path_name>
 ```
 In order to run the program properly on a different video give an appropriate background image as input.
-```
+```shell
 $ ./2_subtask <video_path_name> <bg_image_path_name>
+```
+To Clean:
+```shell
+$ make clean
 ```
 The output will appear on the terminal window. First line of output is ```time(in secs),queue density,dynamic density``` followed by the frame number and the queue and dynamic density computed for that frame.\
 
